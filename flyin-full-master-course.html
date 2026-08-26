@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fly-In — Master Course (All Phases)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:            #0b1421;
+    --bg-alt:        #0e1a2b;
+    --panel:         #101d30;
+    --panel-hi:      #14263e;
+    --grid-line:     #1c3149;
+    --border:        #223a56;
+    --text:          #e7eef7;
+    --text-dim:      #9fb3c8;
+    --text-faint:    #6d84a0;
+    --amber:         #f2a65a;
+    --amber-dim:     #7a5a34;
+    --cyan:          #5eead4;
+    --cyan-dim:      #2c6b62;
+    --red:           #f16565;
+    --violet:        #c586ff;
+    --green:         #7ee08a;
+    --font-display:  'Space Grotesk', 'IBM Plex Sans', sans-serif;
+    --font-body:     'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono:     'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(94,234,212,0.06), transparent 40%),
+      radial-gradient(circle at 85% 15%, rgba(242,166,90,0.05), transparent 40%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 42px 42px;
+    opacity:0.10; pointer-events:none; z-index:0;
+  }
+  a{ color:var(--cyan); text-decoration:none; }
+  a:hover{ text-decoration:underline; }
+  a:focus-visible, button:focus-visible, summary:focus-visible{ outline:2px solid var(--cyan); outline-offset:3px; border-radius:2px; }
+  code, .mono{ font-family:var(--font-mono); }
+
+  .shell{ position:relative; z-index:1; display:grid; grid-template-columns: 300px 1fr; min-height:100vh; }
+  .sidebar{
+    position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+    padding:26px 20px 60px; border-right:1px solid var(--border);
+    background:linear-gradient(180deg, var(--bg-alt), var(--bg));
+  }
+  .sidebar::-webkit-scrollbar{ width:8px; }
+  .sidebar::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
+  .brand{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .brand svg{ width:28px; height:28px; flex:none; }
+  .brand-name{ font-family:var(--font-display); font-weight:700; font-size:1.02rem; letter-spacing:0.02em; }
+  .brand-sub{ font-size:0.7rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.12em; margin:0 0 22px 38px; }
+  .side-block{ margin-bottom:20px; }
+  .side-title{ font-size:0.66rem; text-transform:uppercase; letter-spacing:0.14em; color:var(--text-faint); margin:0 0 8px 2px; font-weight:600; }
+  .side-nav a{ display:block; color:var(--text-dim); font-size:0.82rem; padding:5px 8px; border-radius:6px; margin-bottom:0; }
+  .side-nav a:hover{ background:var(--panel); color:var(--text); text-decoration:none; }
+  .phase-jump{ display:block; color:var(--text); font-size:0.82rem; padding:6px 8px; border-radius:6px; border:1px solid var(--border); margin-bottom:5px; background:var(--panel); }
+  .phase-jump:hover{ border-color:var(--cyan-dim); text-decoration:none; }
+  .phase-jump .n{ font-family:var(--font-mono); color:var(--cyan); margin-right:6px; }
+
+  main{ padding:52px 60px 120px; max-width:920px; }
+  .eyebrow{ font-family:var(--font-mono); font-size:0.74rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--cyan); margin:0 0 12px; display:flex; align-items:center; gap:10px; }
+  .eyebrow .line{ height:1px; width:32px; background:var(--cyan-dim); display:inline-block; }
+  h1.title{ font-family:var(--font-display); font-weight:700; font-size:clamp(1.8rem, 3.6vw, 2.5rem); line-height:1.12; margin:0 0 14px; letter-spacing:-0.01em; }
+  h1.title .accent{ color:var(--amber); }
+  .lede{ font-size:1.02rem; color:var(--text-dim); max-width:74ch; margin:0 0 28px; }
+
+  .phase{ margin-bottom:76px; scroll-margin-top:20px; padding-top:8px; border-top:1px solid var(--border); }
+  .phase:first-of-type{ border-top:none; }
+  .phase-head{ display:flex; align-items:baseline; gap:12px; margin-bottom:4px; }
+  .phase-num{ font-family:var(--font-mono); font-size:0.78rem; color:var(--bg); background:var(--cyan); padding:2px 9px; border-radius:100px; font-weight:700; }
+  h1.phase-title{ font-family:var(--font-display); font-size:1.7rem; font-weight:700; margin:0; }
+  .phase-goal{ color:var(--text-faint); font-size:0.9rem; margin:6px 0 26px; }
+
+  section{ margin-bottom:36px; scroll-margin-top: 20px; }
+  h2{ font-family:var(--font-display); font-size:1.22rem; font-weight:600; margin:0 0 12px; scroll-margin-top:20px; }
+  h3{ font-family:var(--font-display); font-size:1.02rem; font-weight:600; color:var(--amber); margin:22px 0 8px; }
+  h4.cls{ font-family:var(--font-mono); font-size:0.98rem; color:var(--cyan); background:var(--panel-hi); display:inline-block; padding:3px 10px; border-radius:6px; margin:20px 0 8px; border:1px solid var(--border); }
+
+  p{ margin:0 0 12px; color:var(--text); }
+  p.dim{ color:var(--text-dim); font-size:0.94rem; }
+  ul, ol{ margin:0 0 14px; padding-left:20px; }
+  li{ margin-bottom:5px; }
+  strong{ color:#fff; font-weight:600; }
+  hr.rule{ border:none; border-top:1px solid var(--border); margin:36px 0; }
+
+  .box{ border:1px solid var(--border); border-left-width:3px; background:var(--panel); border-radius:8px; padding:13px 16px; margin:14px 0; }
+  .box .box-title{ font-family:var(--font-mono); font-size:0.68rem; text-transform:uppercase; letter-spacing:0.1em; font-weight:600; margin-bottom:6px; display:flex; align-items:center; gap:7px; }
+  .box.why{ border-left-color:var(--cyan); } .box.why .box-title{ color:var(--cyan); }
+  .box.pitfall{ border-left-color:var(--red); } .box.pitfall .box-title{ color:var(--red); }
+  .box.rule-box{ border-left-color:var(--amber); } .box.rule-box .box-title{ color:var(--amber); }
+  .box.checklist{ border-left-color:var(--green); } .box.checklist .box-title{ color:var(--green); }
+  .box p:last-child, .box ul:last-child, .box ol:last-child{ margin-bottom:0; }
+
+  table{ width:100%; border-collapse:collapse; margin:12px 0 18px; font-size:0.88rem; }
+  th, td{ text-align:left; padding:8px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
+  th{ font-family:var(--font-mono); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-faint); font-weight:600; }
+  tr:last-child td{ border-bottom:none; }
+  td code{ color:var(--cyan); }
+  code.inline{ background:var(--panel-hi); border:1px solid var(--border); padding:1px 6px; border-radius:5px; font-size:0.86em; color:var(--cyan); }
+
+  .attrs, .methods{ margin:6px 0 14px; }
+  .attrs li, .methods li{ font-size:0.88rem; }
+  .attrs code, .methods code{ color:var(--amber); }
+  .methods code{ color:var(--cyan); }
+
+  .chip{ display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:0.78rem; padding:2px 9px; border-radius:100px; border:1px solid var(--border); }
+  .chip.normal{ color:var(--text-dim); } .chip.priority{ color:var(--amber); border-color:var(--amber-dim); }
+  .chip.restricted{ color:var(--violet); border-color:#5a3f7a; } .chip.blocked{ color:var(--red); border-color:#7a3f3f; }
+  .dot{ width:7px; height:7px; border-radius:50%; display:inline-block; }
+  .dot.normal{ background:var(--text-dim); } .dot.priority{ background:var(--amber); }
+  .dot.restricted{ background:var(--violet); } .dot.blocked{ background:var(--red); }
+
+  pre{ background:#081019; border:1px solid var(--border); border-radius:8px; padding:14px 16px; overflow-x:auto; margin:12px 0 16px; font-family:var(--font-mono); font-size:0.82rem; line-height:1.55; color:#cfe3f5; }
+  .tok-key{ color:var(--amber); } .tok-str{ color:var(--green); } .tok-com{ color:var(--text-faint); font-style:italic; } .tok-meta{ color:var(--violet); }
+
+  .flow{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:14px 0 20px; font-family:var(--font-mono); font-size:0.8rem; }
+  .flow .node{ background:var(--panel-hi); border:1px solid var(--border); padding:6px 12px; border-radius:8px; color:var(--text); }
+  .flow .arrow{ color:var(--text-faint); }
+
+  details.qa{ border:1px solid var(--border); border-radius:8px; margin-bottom:8px; background:var(--panel); padding:2px 14px; }
+  details.qa summary{ cursor:pointer; padding:10px 0; font-weight:500; color:var(--text); list-style:none; display:flex; gap:10px; align-items:flex-start; font-size:0.92rem; }
+  details.qa summary::-webkit-details-marker{ display:none; }
+  details.qa summary::before{ content:"▸"; color:var(--cyan); flex:none; }
+  details.qa[open] summary::before{ content:"▾"; }
+  details.qa .answer{ padding:0 0 14px 20px; color:var(--text-dim); border-top:1px dashed var(--border); margin-top:2px; padding-top:10px; font-size:0.9rem; }
+
+  figure{ margin:16px 0; } figure svg{ width:100%; height:auto; display:block; }
+  figcaption{ font-size:0.78rem; color:var(--text-faint); margin-top:8px; text-align:center; }
+
+  footer.next{ margin-top:50px; padding:22px 24px; border-radius:12px; background:linear-gradient(135deg, rgba(94,234,212,0.08), rgba(242,166,90,0.05)); border:1px solid var(--border); }
+  .kv{ display:grid; grid-template-columns: 170px 1fr; gap:6px 14px; margin:12px 0; font-size:0.9rem;}
+  .kv dt{ color:var(--text-faint); font-family:var(--font-mono); font-size:0.78rem; }
+  .kv dd{ margin:0; }
+
+  @media (max-width: 880px){
+    .shell{ grid-template-columns:1fr; }
+    .sidebar{ position:relative; height:auto; }
+    main{ padding:32px 20px 90px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ============================================================ -->
+  <nav class="sidebar" aria-label="Course navigation">
+    <div class="brand">
+      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="8" cy="30" r="3.4" fill="#5eead4"/>
+        <circle cx="20" cy="10" r="3.4" fill="#f2a65a"/>
+        <circle cx="32" cy="28" r="3.4" fill="#c586ff"/>
+        <path d="M8 30 L20 10 L32 28 L8 30" stroke="#22344a" stroke-width="1.4" fill="none"/>
+        <circle cx="14" cy="20" r="2" fill="#e7eef7"/>
+      </svg>
+      <span class="brand-name">FLY-IN</span>
+    </div>
+    <p class="brand-sub">Master course · full edition</p>
+
+    <div class="side-block">
+      <p class="side-title">Jump to phase</p>
+      <a class="phase-jump" href="#phase-1"><span class="n">01</span>Foundations &amp; theory</a>
+      <a class="phase-jump" href="#phase-2"><span class="n">02</span>Scope &amp; specification</a>
+      <a class="phase-jump" href="#phase-3"><span class="n">03</span>Architecture &amp; class map</a>
+      <a class="phase-jump" href="#phase-4"><span class="n">04</span>Parser module</a>
+      <a class="phase-jump" href="#phase-5"><span class="n">05</span>Graph &amp; domain model</a>
+      <a class="phase-jump" href="#phase-6"><span class="n">06</span>Pathfinding strategy</a>
+      <a class="phase-jump" href="#phase-7"><span class="n">07</span>Simulation engine</a>
+      <a class="phase-jump" href="#phase-8"><span class="n">08</span>Output &amp; visualization</a>
+      <a class="phase-jump" href="#phase-9"><span class="n">09</span>CLI, tooling &amp; README</a>
+      <a class="phase-jump" href="#phase-10"><span class="n">10</span>Testing &amp; defense prep</a>
+    </div>
+
+    <div class="side-block">
+      <p class="side-title">Class map (preview)</p>
+      <div class="side-nav">
+        <a href="#cls-zone">Zone</a>
+        <a href="#cls-connection">Connection</a>
+        <a href="#cls-drone">Drone</a>
+        <a href="#cls-graph">Graph</a>
+        <a href="#cls-parser">MapParser</a>
+        <a href="#cls-pathfinder">PathFinder</a>
+        <a href="#cls-simulator">Simulator</a>
+        <a href="#cls-visualizer">Visualizer</a>
+        <a href="#cls-app">FlyInApp</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ============================================================ -->
+  <main>
+
+    <p class="eyebrow"><span class="line"></span> Master course · Fly-In (42 project) · full edition</p>
+    <h1 class="title">From blank folder to <span class="accent">working simulation</span>,<br>ten phases, zero copy-pasted code.</h1>
+    <p class="lede">
+      Everything below is <strong>guidance, not implementation</strong>: class names, attributes,
+      method purposes, algorithm steps, file layout, rule checklists. You write every line of
+      Python yourself — which is exactly what lets you defend it. Kept intentionally lean: the
+      subject is precise, so this course just organizes it into buildable, explainable pieces.
+    </p>
+
+    <!-- ================================================================== -->
+    <!-- PHASE 1 -->
+    <!-- ================================================================== -->
+    <div class="phase" id="phase-1">
+      <div class="phase-head"><span class="phase-num">PHASE 1</span><h1 class="phase-title">Foundations &amp; Theory</h1></div>
+      <p class="phase-goal">The vocabulary and mental models everything else depends on.</p>
+
+      <section>
+        <h2>The mental model</h2>
+        <p>You're an air-traffic controller for a drone fleet. A map of <strong>zones</strong> (parking spots) linked by <strong>connections</strong> (corridors). All drones start in one <strong>start_hub</strong>, all must reach one <strong>end_hub</strong>. Time moves in discrete <strong>turns</strong>; every active drone moves or waits each turn. Score = total turns until the last drone arrives. Fewer is better.</p>
+        <div class="box why"><div class="box-title">Why not just "shortest path"?</div><p>One drone → shortest path (Dijkstra) is enough. Many drones sharing capacity-limited zones/connections at the same time → you also need a <strong>scheduler</strong> that resolves who moves this turn without breaking capacity rules. That split (pathfinding vs. scheduling) is the backbone of the whole architecture.</p></div>
+      </section>
+
+      <section>
+        <h2>Vocabulary</h2>
+        <table>
+          <tr><th>Term</th><th>Meaning</th></tr>
+          <tr><td>Zone / Hub</td><td>A node. Name, coordinates, type, color, occupancy limit.</td></tr>
+          <tr><td>start_hub / end_hub</td><td>The unique origin / destination zone. Unlimited occupancy, always.</td></tr>
+          <tr><td>Connection</td><td>A bidirectional edge between two zones, with its own capacity.</td></tr>
+          <tr><td>Turn</td><td>One discrete simultaneous time-step for the whole fleet.</td></tr>
+          <tr><td>Conflict</td><td>Two+ drones' intended moves would exceed a capacity rule.</td></tr>
+        </table>
+      </section>
+
+      <section>
+        <h2>Zone types &amp; movement cost</h2>
+        <table>
+          <tr><th>Type</th><th>Cost to enter</th><th>Rule</th></tr>
+          <tr><td><span class="chip normal"><span class="dot normal"></span>normal</span></td><td>1 turn</td><td>Default.</td></tr>
+          <tr><td><span class="chip priority"><span class="dot priority"></span>priority</span></td><td>1 turn</td><td>Same cost as normal — but should be <em>preferred</em> when routes tie. A hint, not a discount.</td></tr>
+          <tr><td><span class="chip restricted"><span class="dot restricted"></span>restricted</span></td><td>2 turns</td><td>Once a drone departs toward it, it's <strong>committed</strong>: must arrive exactly next turn, can't idle mid-corridor.</td></tr>
+          <tr><td><span class="chip blocked"><span class="dot blocked"></span>blocked</span></td><td>—</td><td>Never enterable. Never part of a valid path.</td></tr>
+        </table>
+      </section>
+
+      <section>
+        <h2>Two independent capacity systems</h2>
+        <ul>
+          <li><strong>Zone capacity</strong> — <code class="inline">max_drones</code> (default 1). Unlimited on start/end hubs.</li>
+          <li><strong>Connection capacity</strong> — <code class="inline">max_link_capacity</code> (default 1). Limits simultaneous transits.</li>
+        </ul>
+        <div class="box pitfall"><div class="box-title">Key subtlety</div><p>Departures free up space <em>within the same turn</em>. Evaluate a turn as: <strong>process all departures first, then check capacity for arrivals</strong> — not against a stale "before this turn" snapshot.</p></div>
+      </section>
+
+      <section>
+        <h2>Why this is (light) Multi-Agent Path Finding</h2>
+        <ul>
+          <li><strong>Think in (resource, turn) pairs</strong>, not just "is X occupied" — capacity is per time-slot.</li>
+          <li><strong>Reserve before you commit</strong> — before a drone departs (especially for a 2-turn restricted move), confirm the destination slot will be free on arrival turn.</li>
+          <li><strong>Optimal MAPF is NP-hard and unnecessary here.</strong> A simple greedy strategy — best known path per drone, move when the next step is free, wait otherwise, prefer priority zones on ties — clears every mandatory requirement and most benchmarks.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Minimum algorithmic toolbox</h2>
+        <table>
+          <tr><th>Tool</th><th>Used for</th></tr>
+          <tr><td>BFS / Dijkstra (self-written)</td><td>Cheapest route per drone, treating zone-type cost as the cost of entering that node.</td></tr>
+          <tr><td>Greedy turn resolution</td><td>Per turn, decide which proposed moves are actually legal.</td></tr>
+          <tr><td>Reservation table</td><td>Dict keyed by <code class="inline">(resource, turn)</code> to prevent double-booking, esp. for restricted-zone transits.</td></tr>
+          <tr><td>Tie-break heuristic</td><td>Prefer paths touching more <code class="inline">priority</code> zones when costs are equal.</td></tr>
+        </table>
+        <p class="dim">No external graph library (forbidden anyway), no A*, no ILP solver — all of this is a few dozen lines each.</p>
+      </section>
+
+      <section>
+        <h2>Hard constraints</h2>
+        <div class="kv">
+          <dt>Language</dt><dd>Python ≥ 3.10</dd>
+          <dt>Style / typing</dt><dd>flake8-clean, mypy-clean, type hints everywhere, PEP 257 docstrings</dd>
+          <dt>Robustness</dt><dd>No unhandled crashes; context managers for files</dd>
+          <dt>Graph libs</dt><dd>Forbidden (networkx, graphlib…) — build your own</dd>
+          <dt>Paradigm</dt><dd>Fully object-oriented, defendable live</dd>
+          <dt>Tooling</dt><dd>Makefile: install / run / debug / clean / lint</dd>
+        </div>
+      </section>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- PHASE 2 -->
+    <!-- ================================================================== -->
+    <div class="phase" id="phase-2">
+      <div class="phase-head"><span class="phase-num">PHASE 2</span><h1 class="phase-title">Scope &amp; Specification</h1></div>
+      <p class="phase-goal">Every subject rule turned into a testable checklist. This is your "definition of done."</p>
+
+      <section>
+        <h2>File-format &amp; parsing checklist</h2>
+        <div class="box checklist"><div class="box-title">Must all be true</div>
+        <ul>
+          <li>Line 1 = <code class="inline">nb_drones: &lt;positive int&gt;</code>; program supports any count.</li>
+          <li>Exactly one <code class="inline">start_hub</code>, exactly one <code class="inline">end_hub</code>.</li>
+          <li>Zone names unique; no dashes or spaces in names.</li>
+          <li>Connections reference only already-defined zones; <code class="inline">a-b</code> ≡ <code class="inline">b-a</code> (duplicate = error).</li>
+          <li><code class="inline">zone=</code> ∈ {normal, blocked, restricted, priority} or it's a parse error.</li>
+          <li><code class="inline">max_drones</code> / <code class="inline">max_link_capacity</code> must be positive ints when present; ignored (not an error) if written on start/end hub.</li>
+          <li><code class="inline">#</code> comment lines and metadata in any key order are supported.</li>
+          <li>Any malformed line → clean error naming the line number and reason, program stops (no crash traceback).</li>
+        </ul>
+        </div>
+      </section>
+
+      <section>
+        <h2>Simulation-rule checklist</h2>
+        <div class="box checklist"><div class="box-title">Must all be true</div>
+        <ul>
+          <li>Zone occupancy respected every turn (default 1, or <code class="inline">max_drones</code>); start/end hubs unlimited.</li>
+          <li>Connection capacity respected (default 1, or <code class="inline">max_link_capacity</code>).</li>
+          <li>Departures free capacity within the same turn before arrivals are checked.</li>
+          <li>Restricted-zone moves are atomic 2-turn commitments — no mid-corridor waiting, no cancelling.</li>
+          <li>Blocked zones are never entered by any produced path.</li>
+          <li>Drones may move simultaneously, wait, or (for restricted) be mid-transit.</li>
+          <li>A drone that reaches end_hub is delivered and no longer tracked/scheduled.</li>
+          <li>Simulation stops exactly when all drones have arrived.</li>
+        </ul>
+        </div>
+      </section>
+
+      <section>
+        <h2>Output-format checklist</h2>
+        <ul>
+          <li>One line per turn.</li>
+          <li>Space-separated moves per line, format <code class="inline">D&lt;ID&gt;-&lt;zone&gt;</code> (arrival) or <code class="inline">D&lt;ID&gt;-&lt;connection&gt;</code> (in-flight toward a restricted zone).</li>
+          <li>Stationary drones omitted from that turn's line.</li>
+        </ul>
+        <pre>D1-roof1 D2-corridorA
+D1-roof2 D2-tunnelB
+D1-goal D2-goal</pre>
+      </section>
+
+      <section>
+        <h2>Non-functional checklist</h2>
+        <ul>
+          <li>Fully OOP, no external graph library, flake8 + mypy clean, typed, docstringed.</li>
+          <li>Visual feedback: colored terminal output and/or a graphical view.</li>
+          <li>Makefile targets: install, run, debug, clean, lint (lint-strict optional).</li>
+          <li>README.md: italic 42-attribution first line, Description, Instructions, Resources (incl. AI-usage disclosure), algorithm explanation, visualization documentation.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Scoring &amp; benchmarks (your target, not a hard gate)</h2>
+        <table>
+          <tr><th>Tier</th><th>Target turns</th><th>Sample maps</th></tr>
+          <tr><td>Easy</td><td>&lt; 10</td><td>Linear (2 drones, ≤6) · Simple fork (4, ≤8) · Basic capacity (4, ≤6)</td></tr>
+          <tr><td>Medium</td><td>10–30</td><td>Dead-end trap (5, ≤12) · Circular loop (6, ≤15) · Priority puzzle (5, ≤12)</td></tr>
+          <tr><td>Hard</td><td>&lt; 60</td><td>Maze nightmare (8, ≤30) · Capacity hell (12, ≤35) · Ultimate challenge (15, ≤45)</td></tr>
+          <tr><td>Bonus — Challenger</td><td>optional</td><td>Impossible Dream (25 drones), beat 45 turns</td></tr>
+        </table>
+        <p class="dim">Primary score = total turns. Ties may be broken on secondary metrics (drones/turn, avg turns/drone, visualization quality) — worth logging even though not mandatory to compute.</p>
+      </section>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- PHASE 3 -->
+    <!-- ================================================================== -->
+    <div class="phase" id="phase-3">
+      <div class="phase-head"><span class="phase-num">PHASE 3</span><h1 class="phase-title">Architecture &amp; Class Map</h1></div>
+      <p class="phase-goal">The simplest class set that cleanly covers every responsibility above — nothing more.</p>
+
+      <section>
+        <h2>File layout</h2>
+        <pre>fly_in/
+├── main.py            <span class="tok-com"># entry point → FlyInApp</span>
+├── parser.py          <span class="tok-com"># MapParser</span>
+├── domain.py          <span class="tok-com"># Zone, Connection, Drone, Graph</span>
+├── pathfinder.py       <span class="tok-com"># PathFinder</span>
+├── simulator.py        <span class="tok-com"># Simulator</span>
+├── visualizer.py        <span class="tok-com"># Visualizer</span>
+├── Makefile
+├── README.md
+└── maps/                <span class="tok-com"># your own test maps (phase 10)</span></pre>
+        <p class="dim">One module per class family. Small enough to navigate by memory, large enough to keep responsibilities separate — exactly what an evaluator expects from "fully OOP."</p>
+      </section>
+
+      <section>
+        <h2>Dependency direction (who calls whom)</h2>
+        <div class="flow">
+          <span class="node">MapParser</span><span class="arrow">→</span>
+          <span class="node">Graph (+Zone/Connection/Drone)</span><span class="arrow">→</span>
+          <span class="node">PathFinder</span><span class="arrow">→</span>
+          <span class="node">Simulator</span><span class="arrow">→</span>
+          <span class="node">Visualizer</span>
+        </div>
+        <p>Data flows strictly left→right. <code class="inline">FlyInApp</code> (in <code class="inline">main.py</code>) is the only thing that knows about all of them — every other class only knows its immediate neighbor's output type. This is what keeps each class independently explainable at defense.</p>
+      </section>
+
+      <section>
+        <h2>Class responsibility table</h2>
+        <table>
+          <tr><th>Class</th><th>Single responsibility</th></tr>
+          <tr><td><code>Zone</code></td><td>Represent one zone and its live occupancy.</td></tr>
+          <tr><td><code>Connection</code></td><td>Represent one edge and its live traversal load.</td></tr>
+          <tr><td><code>Drone</code></td><td>Represent one agent's identity, position and assigned path.</td></tr>
+          <tr><td><code>Graph</code></td><td>Own all zones/connections; answer adjacency queries.</td></tr>
+          <tr><td><code>MapParser</code></td><td>Turn file text into a validated <code>Graph</code> + drone count.</td></tr>
+          <tr><td><code>PathFinder</code></td><td>Compute a cheapest, priority-aware route for one drone.</td></tr>
+          <tr><td><code>Simulator</code></td><td>Run the turn loop; resolve capacity conflicts; produce the log.</td></tr>
+          <tr><td><code>Visualizer</code></td><td>Render turns as colored terminal (and/or graphical) output.</td></tr>
+          <tr><td><code>FlyInApp</code></td><td>Wire everything together; the CLI entry point.</td></tr>
+        </table>
+        <p class="dim">Nine classes total. That's the whole architecture — deliberately no more. Full attribute/method breakdown for each is in Phases 4–8.</p>
+      </section>
+
+      <div class="box why"><div class="box-title">Why exactly this split, and not more/fewer classes</div>
+      <p>Each class maps to a distinct question the project asks: <em>"what does the text file mean?"</em> (Parser) → <em>"what does the network look like?"</em> (Graph/Zone/Connection) → <em>"where should one drone go?"</em> (PathFinder) → <em>"who actually moves this turn?"</em> (Simulator) → <em>"how do I show that to a human?"</em> (Visualizer). Merging any two would mix unrelated questions into one class; splitting further would create classes with nothing meaningful of their own to own.</p></div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- PHASE 4 -->
+    <!-- ================================================================== -->
+    <div class="phase" id="phase-4">
+      <div class="phase-head"><span class="phase-num">PHASE 4</span><h1 class="phase-title">Parser Module</h1></div>
+      <p class="phase-goal">Turn raw text into a validated <code class="inline">Graph</code>. Every rule from Phase 2's parsing checklist becomes one method here.</p>
+
+      <h4 class="cls" id="cls-parser">class MapParser</h4>
+      <h3>Attributes</h3>
+      <ul class="attrs">
+        <li><code>filepath</code> — path to the map file.</li>
+        <li><code>graph</code> — the <code>Graph</code> being built.</li>
+        <li><code>nb_drones</code> — parsed drone count.</li>
+        <li><code>line_number</code> — tracked for error messages.</li>
+      </ul>
+      <h3>Methods</h3>
+      <ul class="methods">
+        <li><code>parse()</code> — orchestrates the whole read; opens the file with a context manager, iterates lines, dispatches per prefix, returns <code>(graph, nb_drones)</code>.</li>
+        <li><code>_strip_comment(line)</code> — drops anything from <code>#</code> onward, trims whitespace.</li>
+        <li><code>_parse_drone_count(line)</code> — validates and stores line 1.</li>
+        <li><code>_parse_zone_line(line, kind)</code> — handles <code>start_hub</code>/<code>end_hub</code>/<code>hub</code>; extracts name, x, y, metadata; creates a <code>Zone</code>; enforces uniqueness and the single-start/single-end rule.</li>
+        <li><code>_parse_connection_line(line)</code> — extracts the two zone names (split once on the last unambiguous dash), resolves them against already-known zones, checks for duplicates, creates a <code>Connection</code>.</li>
+        <li><code>_parse_metadata(raw)</code> — turns <code>[key=value ...]</code> into a dict; applies defaults; type-checks each known key.</li>
+        <li><code>_validate_zone_type(value)</code> — checks membership in the 4 allowed types.</li>
+        <li><code>_validate_positive_int(value, field_name)</code> — shared validator for capacities.</li>
+        <li><code>_error(message)</code> — raises one custom, descriptive exception carrying the line number; the only place errors are worded.</li>
+      </ul>
+
+      <div class="box pitfall"><div class="box-title">Order of operations that avoids subtle bugs</div>
+      <ol>
+        <li>Parse <code>nb_drones</code> first — fail fast if missing/invalid.</li>
+        <li>Parse all zone lines before any connection line (connections must reference already-known zones — this ordering makes that check trivial).</li>
+        <li>Only after the whole file is read: confirm exactly one start and one end hub exist.</li>
+        <li>Apply "ignore <code>max_drones</code> on start/end" as a post-processing step on those two zones specifically, not as a general rule.</li>
+      </ol></div>
+
+      <h3>One custom exception is enough</h3>
+      <p>Define a single <code class="inline">MapParseError</code> (subclassing <code class="inline">Exception</code>) carrying a message and line number. Every validation failure raises it; <code class="inline">FlyInApp</code> catches it once, prints a clean message, exits — satisfying "no unhandled crashes" without a maze of exception types.</p>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- PHASE 5 -->
+    <!-- ================================================================== -->
+    <div class="phase" id="phase-5">
+      <div class="phase-head"><span class="phase-num">PHASE 5</span><h1 class="phase-title">Graph &amp; Domain Model</h1></div>
+      <p class="phase-goal">The four classes that hold the network's live state during simulation.</p>
+
+      <h4 class="cls" id="cls-zone">class Zone</h4>
+      <ul class="attrs">
+        <li><code>name</code>, <code>x</code>, <code>y</code> — identity and position.</li>
+        <li><code>zone_type</code> — one of normal / priority / restricted / blocked.</li>
+        <li><code>color</code> — optional, for the visualizer.</li>
+        <li><code>max_drones</code> — capacity (unlimited sentinel for start/end).</li>
+        <li><code>occupants</code> — a <code>set</code> of drone IDs currently inside.</li>
+      </ul>
+      <ul class="methods">
+        <li><code>entry_cost()</code> — 1, 2, or "impossible" based on <code>zone_type</code>.</li>
+        <li><code>has_space(n=1)</code> — is there room for <code>n</code> more drones right now?</li>
+        <li><code>add_occupant(drone_id)</code> / <code>remove_occupant(drone_id)</code> — mutate <code>occupants</code>.</li>
+        <li><code>is_start</code> / <code>is_end</code> — simple boolean properties (or a subclass, if you prefer — a flag is simpler here).</li>
+      </ul>
+
+      <h4 class="cls" id="cls-connection">class Connection</h4>
+      <ul class="attrs">
+        <li><code>zone_a</code>, <code>zone_b</code> — the two <code>Zone</code> endpoints.</li>
+        <li><code>max_link_capacity</code> — capacity.</li>
+        <li><code>in_transit</code> — set of drone IDs currently traversing it.</li>
+      </ul>
+      <ul class="methods">
+        <li><code>other_end(zone)</code> — given one side, return the neighbor.</li>
+        <li><code>has_space()</code> — capacity check.</li>
+        <li><code>enter(drone_id)</code> / <code>leave(drone_id)</code> — mutate <code>in_transit</code>.</li>
+      </ul>
+
+      <h4 class="cls" id="cls-drone">class Drone</h4>
+      <ul class="attrs">
+        <li><code>drone_id</code> — e.g. <code>1</code> (displayed as <code>D1</code>).</li>
+        <li><code>current_zone</code> — where it is right now.</li>
+        <li><code>path</code> — the ordered list of zone names from <code>PathFinder</code>.</li>
+        <li><code>path_index</code> — how far along <code>path</code> it is.</li>
+        <li><code>transit_state</code> — <code>None</code>, or "mid-restricted-move, arriving turn N".</li>
+        <li><code>arrived</code> — boolean.</li>
+      </ul>
+      <ul class="methods">
+        <li><code>next_zone()</code> — peek at the next step in <code>path</code>.</li>
+        <li><code>advance()</code> — move <code>path_index</code> forward, update <code>current_zone</code>.</li>
+        <li><code>has_arrived()</code> — <code>current_zone.is_end</code>.</li>
+      </ul>
+
+      <h4 class="cls" id="cls-graph">class Graph</h4>
+      <ul class="attrs">
+        <li><code>zones</code> — dict, name → <code>Zone</code>.</li>
+        <li><code>connections</code> — list of <code>Connection</code> (or dict keyed by frozenset of the two names).</li>
+        <li><code>start</code>, <code>end</code> — the two special <code>Zone</code> references.</li>
+      </ul>
+      <ul class="methods">
+        <li><code>add_zone(zone)</code> / <code>add_connection(connection)</code> — populate the graph (called by <code>MapParser</code>).</li>
+        <li><code>neighbors(zone_name)</code> — the adjacency-list lookup: which connections touch this zone.</li>
+        <li><code>get_zone(name)</code> — safe lookup with a clear error if missing.</li>
+        <li><code>get_connection(name1, name2)</code> — safe lookup between two known-adjacent zones.</li>
+      </ul>
+
+      <div class="box why"><div class="box-title">Why an adjacency list, concretely here</div>
+      <p>Each <code class="inline">Zone</code>'s neighbors are just "the other end of every <code class="inline">Connection</code> that mentions it" — you don't need a separate index structure at all if <code class="inline">Graph.neighbors()</code> simply filters <code class="inline">connections</code> by zone name (or, for speed on larger maps, precompute a <code class="inline">dict[name, list[Connection]]</code> once when the graph is built). Either is O(1)-ish per lookup and needs zero external dependencies.</p></div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- PHASE 6 -->
+    <!-- ================================================================== -->
+    <div class="phase" id="phase-6">
+      <div class="phase-head"><span class="phase-num">PHASE 6</span><h1 class="phase-title">Pathfinding Strategy</h1></div>
+      <p class="phase-goal">One class, one job: the cheapest, priority-aware route for a single drone, ignoring other drones.</p>
+
+      <h4 class="cls" id="cls-pathfinder">class PathFinder</h4>
+      <ul class="attrs"><li><code>graph</code> — the <code>Graph</code> to search over.</li></ul>
+      <ul class="methods">
+        <li><code>find_path(start_name, end_name)</code> — returns an ordered list of zone names, or <code>None</code> if unreachable (e.g. blocked-off / disconnected graph).</li>
+        <li><code>_edge_cost(destination_zone)</code> — 1 for normal/priority, 2 for restricted, "infinite/skip" for blocked.</li>
+        <li><code>_tie_break_key(zone)</code> — a comparison value used only when two candidate routes cost the same, favoring more <code>priority</code> zones.</li>
+      </ul>
+
+      <h3>Algorithm outline (Dijkstra, self-written, no library)</h3>
+      <ol>
+        <li>Maintain a "best known cost so far" per zone, initialized to infinity except the start (0).</li>
+        <li>Use a priority queue (Python's built-in <code class="inline">heapq</code> is allowed — it's a data structure, not a graph library) keyed by cost, with the priority-tie-break as a secondary key.</li>
+        <li>Repeatedly pop the cheapest unvisited zone, skip <code class="inline">blocked</code> neighbors entirely, relax costs to its neighbors using <code class="inline">_edge_cost</code>.</li>
+        <li>Stop when you pop the end zone, or the queue empties (no path exists).</li>
+        <li>Reconstruct the path by walking a "came-from" map you filled in during relaxation.</li>
+      </ol>
+
+      <div class="box why"><div class="box-title">Where "priority" actually gets used</div>
+      <p>Cost stays identical between <code class="inline">normal</code> and <code class="inline">priority</code> zones (both = 1). The tie-break key is what lets priority zones win when two paths reach the same zone at the same total cost — e.g. compare by <code class="inline">(total_cost, -priority_zone_count)</code> so cheaper wins first, and among equal-cost options the one touching more priority zones wins.</p></div>
+
+      <div class="box pitfall"><div class="box-title">Keep it single-drone here</div>
+      <p><code class="inline">PathFinder</code> should know nothing about other drones, current occupancy, or turns — that's the <code class="inline">Simulator</code>'s job in Phase 7. Mixing the two concerns here is the most common way this project gets over-engineered; resist it.</p></div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- PHASE 7 -->
+    <!-- ================================================================== -->
+    <div class="phase" id="phase-7">
+      <div class="phase-head"><span class="phase-num">PHASE 7</span><h1 class="phase-title">Simulation / Scheduling Engine</h1></div>
+      <p class="phase-goal">Where every capacity rule and the restricted-zone commitment trap actually get enforced, turn by turn.</p>
+
+      <h4 class="cls" id="cls-simulator">class Simulator</h4>
+      <ul class="attrs">
+        <li><code>graph</code>, <code>drones</code> — the network and the fleet (each already carrying a <code>PathFinder</code>-computed <code>path</code>).</li>
+        <li><code>turn</code> — current turn number, starts at 0.</li>
+        <li><code>reservations</code> — dict keyed by <code>(resource, turn)</code> → drone id, used to lock in future slots for restricted-zone commitments.</li>
+        <li><code>log</code> — list of turn lines, built as the simulation runs.</li>
+      </ul>
+      <ul class="methods">
+        <li><code>run()</code> — loop calling <code>step()</code> until <code>is_finished()</code>; returns <code>log</code>.</li>
+        <li><code>step()</code> — resolves exactly one turn: propose → resolve → apply → record.</li>
+        <li><code>_propose_moves()</code> — for each non-arrived drone, ask "what would it like to do this turn" (advance one path step, continue a restricted transit, or wait).</li>
+        <li><code>_resolve_conflicts(proposals)</code> — filters proposals down to the ones that are actually legal <em>this turn</em>, applying the departures-before-arrivals rule and the reservation table.</li>
+        <li><code>_apply_moves(approved)</code> — mutates <code>Zone</code>/<code>Connection</code> occupancy and each <code>Drone</code>'s state.</li>
+        <li><code>_record_turn(approved)</code> — formats this turn's line in the required output syntax.</li>
+        <li><code>is_finished()</code> — all drones <code>arrived</code>.</li>
+      </ul>
+
+      <h3>The turn-resolution order (this is the whole engine)</h3>
+      <ol>
+        <li><strong>Departures</strong>: every drone leaving a zone this turn frees that zone's slot immediately, in-memory, before arrivals are checked.</li>
+        <li><strong>Restricted commitments already in flight</strong>: drones due to land this turn from a 2-turn move land unconditionally (their slot was reserved when they departed) and are marked arrived-at-zone.</li>
+        <li><strong>New 1-turn moves (normal/priority)</strong>: check destination zone capacity (post-departure) and, if the move uses a connection, connection capacity; approve while capacity remains, reject the rest (they wait instead).</li>
+        <li><strong>New restricted-zone departures</strong>: only allowed if the destination zone <em>will</em> have a free slot on arrival turn — check the reservation table, not just current occupancy; if approved, write a reservation for <code>turn + 2</code> and mark the drone "in transit."</li>
+        <li><strong>Everyone else</strong>: stays in place (a valid, deliberate "wait").</li>
+      </ol>
+
+      <div class="box pitfall"><div class="box-title">Deadlock avoidance, kept simple</div>
+      <p>Because unresolved proposals simply become "wait" instead of erroring, the simulation can never crash on a conflict — worst case, drones wait extra turns. To keep the turn count competitive, the <em>order</em> you resolve competing proposals in matters: a simple, defendable rule is FIFO by drone ID, or "closest to the goal first." Anything more elaborate is optimization territory for Phase 10, not a mandatory requirement.</p></div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- PHASE 8 -->
+    <!-- ================================================================== -->
+    <div class="phase" id="phase-8">
+      <div class="phase-head"><span class="phase-num">PHASE 8</span><h1 class="phase-title">Output &amp; Visualization</h1></div>
+      <p class="phase-goal">Satisfy the exact log format, then add the simplest visual feedback layer on top.</p>
+
+      <h3>Output format, non-negotiable</h3>
+      <ul>
+        <li>One line per turn; stationary drones omitted from that line.</li>
+        <li>Space-separated tokens: <code class="inline">D&lt;ID&gt;-&lt;zone&gt;</code> for arrivals, <code class="inline">D&lt;ID&gt;-&lt;connection&gt;</code> for restricted transits.</li>
+        <li>Printing stops the turn all drones have arrived.</li>
+      </ul>
+      <p class="dim"><code class="inline">Simulator._record_turn()</code> already builds this — <code class="inline">Visualizer</code> just needs to print/decorate it, not recompute it.</p>
+
+      <h4 class="cls" id="cls-visualizer">class Visualizer</h4>
+      <ul class="attrs">
+        <li><code>graph</code> — for zone colors/positions.</li>
+        <li><code>color_map</code> — zone name → ANSI color code, built once from each <code>Zone.color</code>.</li>
+      </ul>
+      <ul class="methods">
+        <li><code>render_turn(turn_number, line)</code> — prints the required plain-text line, plus a colored annotation (e.g. colorize each <code class="inline">D&lt;ID&gt;-&lt;zone&gt;</code> token using that zone's color).</li>
+        <li><code>render_summary(total_turns, drones)</code> — final report: total turns, optionally the secondary metrics from Phase 2.</li>
+        <li><code>render_map()</code> <em>(optional, simplest useful version)</em> — a static ASCII/coordinate-based print of zones and connections before the run starts, so a viewer can orient themselves.</li>
+      </ul>
+      <div class="box why"><div class="box-title">Simplest option that still satisfies the requirement</div>
+      <p>The subject accepts <em>colored terminal output</em> alone — no GUI required. ANSI escape codes (Python's built-in <code class="inline">"\033[3xm"</code> sequences, or the small <code class="inline">colorama</code>-style approach if you want an extra dependency) are enough to map each zone's declared <code class="inline">color</code> metadata to a visible terminal color per move. That single choice satisfies "visual representation," "documented in the README," and "colors specified in zone metadata are used" — all at once, with no graphics library.</p></div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- PHASE 9 -->
+    <!-- ================================================================== -->
+    <div class="phase" id="phase-9">
+      <div class="phase-head"><span class="phase-num">PHASE 9</span><h1 class="phase-title">CLI, Tooling &amp; README</h1></div>
+      <p class="phase-goal">Wire the classes together and satisfy every non-functional requirement.</p>
+
+      <h4 class="cls" id="cls-app">class FlyInApp</h4>
+      <ul class="attrs"><li><code>args</code> — parsed CLI arguments (map file path, optional flags like <code>--capacity-info</code> mentioned in the live-coding defense step).</li></ul>
+      <ul class="methods">
+        <li><code>run()</code> — the only place that touches every other class: parse → build graph → pathfind per drone → simulate → visualize; wraps the whole thing in a top-level try/except around <code>MapParseError</code> (and any other expected failure) for a clean exit.</li>
+        <li><code>_parse_args()</code> — thin wrapper over <code class="inline">argparse</code>.</li>
+      </ul>
+      <p><code class="inline">main.py</code> is then just: build a <code class="inline">FlyInApp</code>, call <code class="inline">run()</code>. That's it — the "script" is a two-line shell around the object graph.</p>
+
+      <h3>Makefile targets (required)</h3>
+      <table>
+        <tr><th>Target</th><th>Does</th></tr>
+        <tr><td><code>install</code></td><td>Installs dependencies via pip/uv/pipx.</td></tr>
+        <tr><td><code>run</code></td><td>Executes <code>main.py</code> (accepts a map path argument).</td></tr>
+        <tr><td><code>debug</code></td><td>Runs under <code>pdb</code>.</td></tr>
+        <tr><td><code>clean</code></td><td>Removes <code>__pycache__</code>, <code>.mypy_cache</code>, etc.</td></tr>
+        <tr><td><code>lint</code></td><td><code>flake8 .</code> and <code>mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs</code>.</td></tr>
+        <tr><td><code>lint-strict</code> <em>(optional)</em></td><td><code>flake8 .</code> and <code>mypy . --strict</code>.</td></tr>
+      </table>
+
+      <h3>README.md skeleton</h3>
+      <ul>
+        <li><em>Italic</em> first line: "This project has been created as part of the 42 curriculum by &lt;login(s)&gt;."</li>
+        <li><strong>Description</strong> — goal + overview.</li>
+        <li><strong>Instructions</strong> — install/run.</li>
+        <li><strong>Algorithm &amp; design choices</strong> — your pathfinding + scheduling strategy in your own words (this doubles as defense prep).</li>
+        <li><strong>Visualization</strong> — what it looks like and why it helps.</li>
+        <li><strong>Resources</strong> — references used, and exactly how/where AI assisted.</li>
+      </ul>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- PHASE 10 -->
+    <!-- ================================================================== -->
+    <div class="phase" id="phase-10">
+      <div class="phase-head"><span class="phase-num">PHASE 10</span><h1 class="phase-title">Testing, Tuning &amp; Defense Prep</h1></div>
+      <p class="phase-goal">Prove correctness, sanity-check performance, and get ready to explain it live.</p>
+
+      <h3>Build your own maps for each edge case</h3>
+      <ul>
+        <li>Single drone, linear path.</li>
+        <li>Disconnected graph (no path exists) — must fail gracefully, not crash.</li>
+        <li>Zero-width bottleneck (capacity 1 shared by many drones).</li>
+        <li>A restricted zone right next to the end hub (tests the commitment rule under time pressure).</li>
+        <li>Duplicate connection, invalid zone type, missing start/end — each should raise a clear <code class="inline">MapParseError</code>.</li>
+      </ul>
+
+      <h3>Sanity-check against the benchmarks</h3>
+      <p class="dim">Not mandatory to hit — but any large miss is a signal your scheduler is over-waiting somewhere (usually: not preferring priority zones, or resolving conflicts in a poor order).</p>
+      <table>
+        <tr><th>Tier</th><th>Target</th></tr>
+        <tr><td>Easy</td><td>&lt; 10 turns</td></tr>
+        <tr><td>Medium</td><td>10–30 turns</td></tr>
+        <tr><td>Hard</td><td>&lt; 60 turns</td></tr>
+      </table>
+
+      <h3>Defense checklist</h3>
+      <div class="box checklist"><div class="box-title">Be ready to</div>
+      <ul>
+        <li>Explain, live, why the architecture is fully OOP — point at each class's single responsibility.</li>
+        <li>Trace one drone's journey through Parser → Graph → PathFinder → Simulator → Visualizer out loud.</li>
+        <li>Explain the restricted-zone commitment rule and show where it's enforced in <code class="inline">Simulator</code>.</li>
+        <li>State your algorithm's complexity (Dijkstra: <code class="inline">O((V+E) log V)</code> per drone; turn resolution: <code class="inline">O(D)</code> per turn).</li>
+        <li>Perform the live-coding modification calmly: e.g. adding a <code class="inline">--capacity-info</code> flag — know exactly which class/method would need a one-line addition (hint: <code class="inline">Simulator._record_turn()</code> and <code class="inline">FlyInApp._parse_args()</code>).</li>
+      </ul>
+      </div>
+
+      <details class="qa">
+        <summary>Why is a single custom exception class enough for the whole parser?</summary>
+        <div class="answer">Every parse failure needs the same two things: a human-readable message and a line number. One exception type carrying both, raised from many small validators, keeps error handling in exactly one place (the top-level catch in <code class="inline">FlyInApp.run()</code>) instead of scattering try/except blocks everywhere.</div>
+      </details>
+      <details class="qa">
+        <summary>Why does PathFinder never look at current drone occupancy?</summary>
+        <div class="answer">Because that's a scheduling concern, not a routing concern. Keeping them separate means each class stays small, testable in isolation, and easy to explain — exactly what "simplest correct solution" means in practice.</div>
+      </details>
+    </div>
+
+    <!-- ================================================================== -->
+    <footer class="next">
+      <h2 style="border:none; padding:0; margin-bottom:8px;">You now have the whole build order</h2>
+      <p class="dim">Suggested build sequence when you actually start typing: <code class="inline">domain.py</code> → <code class="inline">parser.py</code> → a tiny manual smoke test → <code class="inline">pathfinder.py</code> → <code class="inline">simulator.py</code> → <code class="inline">visualizer.py</code> → <code class="inline">main.py</code> → Makefile/README last. Each step is independently testable before the next depends on it — that's the whole point of the split.</p>
+    </footer>
+
+  </main>
+</div>
+</body>
+</html>
