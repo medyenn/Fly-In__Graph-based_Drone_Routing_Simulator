@@ -6,7 +6,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import NoReturn
 
-from domain import Connection, Graph, Zone
+from domain import Connection, Zone
+from graph import Graph
 
 ALLOWED_ZONE_TYPES = {"normal", "priority", "restricted", "blocked"}
 ZONE_METADATA_KEYS = {"zone", "color", "max_drones"}
@@ -229,3 +230,4 @@ class MapParser:
     def error(self, message: str) -> NoReturn:
         """Raise MapParseError with the current line number attached."""
         raise MapParseError(message, self.line_number)
+    
