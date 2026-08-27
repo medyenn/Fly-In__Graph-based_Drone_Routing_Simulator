@@ -1,11 +1,6 @@
 """PathFinder: cheapest, priority-aware route for a single drone.
-
-Deliberately ignorant of everything Simulator owns: other drones, current
-occupancy, turns. Mixing those concerns in here is the most common way
-this project gets over-engineered - resist it. One job: given a start and
-an end zone name, return the cheapest path, preferring routes that touch
-more priority zones when two routes cost exactly the same.
-"""
+Given a start and an end zone name, return the cheapest
+path, preferring routes that touch more priority zones."""
 
 from __future__ import annotations
 
@@ -80,7 +75,8 @@ class PathFinder:
                     best_priority[neighbor.name] = candidate_priority
                     came_from[neighbor.name] = name
                     heapq.heappush(
-                        heap, (candidate_cost, -candidate_priority, neighbor.name)
+                        heap, (
+                            candidate_cost, -candidate_priority, neighbor.name)
                     )
 
         return None  # end_name is unreachable from start_name
