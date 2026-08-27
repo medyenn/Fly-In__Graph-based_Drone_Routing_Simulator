@@ -1,7 +1,13 @@
-"""Allow the project to run with `python3 src`."""
+"""Fly-In entry point."""
 
-from main import main
+from __future__ import annotations
+from orchestrator import FlyInApp
 
 
-if __name__ == "__main__":
-    raise SystemExit(main())
+def main() -> int:
+    """Create the application and run it."""
+    return FlyInApp.from_argv().run()
+
+
+if __name__ == '__main__':
+    main()

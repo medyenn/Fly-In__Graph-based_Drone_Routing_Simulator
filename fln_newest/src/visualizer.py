@@ -111,7 +111,9 @@ class Visualizer(arcade.Window):
         super().on_resize(width, height)
         self.layout = self._layout()
         for drone_id, zone_name in self.positions.items():
-            if drone_id not in self.animations and drone_id not in self.transit:
+            if (
+                drone_id not in self.animations
+                    and drone_id not in self.transit):
                 self.visual_positions[drone_id] = self._point(zone_name)
 
     def _sync_visual_positions(self) -> None:
@@ -202,10 +204,6 @@ class Visualizer(arcade.Window):
         animation = self.animations.get(drone_id)
         if animation is not None:
             start_pos, end_pos = animation
-            # self.timer is reused as a pause countdown once the move
-            # phase ends; without this guard that second countdown
-            # re-drives the same timer/MOVE_TIME ratio and replays the
-            # whole move a second time during the pause.
             if self.turn_pause:
                 progress = 1.0
             else:
@@ -222,9 +220,9 @@ class Visualizer(arcade.Window):
 
     def _finish_turn(self) -> None:
         """Commit this turn, freeze every drone at its new position, and
-        hand control back to on_update so the next turn starts exactly
-        once (avoids the double-start glitch)."""
-        tokens = self.log[self.turn].split()
+        hand control back to on_update"""
+        if self.turn < len(self.log):
+            tokens = self.log[self.turn].split()
 
         for drone_id, animation in list(self.animations.items()):
             _, final_position = animation
@@ -247,8 +245,6 @@ class Visualizer(arcade.Window):
         self.turn += 1
         self.timer = 0.0
         self.turn_pause = False
-        # Let the next on_update call's "not turn_started" branch be the
-        # single place that calls _start_turn() for the new turn.
         self.turn_started = False
 
         if self.turn >= len(self.log):
@@ -327,7 +323,8 @@ class Visualizer(arcade.Window):
 
     def _draw_connections(self) -> None:
         """Draw network edges and highlight drones currently in transit."""
-        visible_active = set(self.active_connections) | set(self.transit.values())
+        visible_active = (
+            set(self.active_connections) | set(self.transit.values()))
         for connection in self.graph.connections:
             start = self._point(connection.zone_a.name)
             end = self._point(connection.zone_b.name)
@@ -341,21 +338,21 @@ class Visualizer(arcade.Window):
                 arcade.draw_circle_outline(*middle, 7, ACTIVE_LINE, 2)
 
     def _label_positions(self) -> dict[str, tuple[float, float]]:
-        """Place labels above odd-numbered zones and below even-numbered
-        zones (numbered by draw order), nudging sideways only if two
-        labels on the same side would otherwise collide."""
+        """Place labels on or under zones"""
         radius = self._radius()
         gap = radius + 13
         labels: dict[str, tuple[float, float]] = {}
         ordered = sorted(
             self.graph.zones.values(),
-            key=lambda zone: (self._point(zone.name)[1], self._point(zone.name)[0]),
+            key=lambda zone: (
+                self._point(zone.name)[1], self._point(zone.name)[0]),
         )
         for index, zone in enumerate(ordered, start=1):
             x, y = self._point(zone.name)
             above = (x, y + gap)
             below = (x, y - gap)
-            primary, secondary = (above, below) if index % 2 == 1 else (below, above)
+            primary, secondary = (
+                (above, below) if index % 2 == 1 else (below, above))
             candidates = [
                 primary,
                 (primary[0] - gap, primary[1]),
@@ -395,7 +392,9 @@ class Visualizer(arcade.Window):
 
         for zone_name, drone_ids in groups.items():
             x, y = self._point(zone_name)
-            label = str(len(drone_ids)) if len(drone_ids) > 1 else f"D{drone_ids[0]}"
+            label = (
+                str(len(drone_ids))
+                if len(drone_ids) > 1 else f"D{drone_ids[0]}")
             self._draw_drone(x, y, label)
 
         for drone_id in moving:
@@ -412,7 +411,8 @@ class Visualizer(arcade.Window):
         """Draw a replay button anchored to the current window width."""
         x = self.width - 160
         arcade.draw_lbwh_rectangle_filled(x, 25, 120, 40, (45, 55, 70))
-        arcade.draw_text("REPLAY", x + 60, 39, TEXT_COLOR, 11, anchor_x="center")
+        arcade.draw_text(
+            "REPLAY", x + 60, 39, TEXT_COLOR, 11, anchor_x="center")
         arcade.draw_text("SPACE: pause   R: replay", 35, 35, TEXT_COLOR, 11)
 
     @staticmethod

@@ -1,5 +1,5 @@
 NAME = fly_in
-PYTHON = python3
+PYTHON = uv run python3 -m
 ENTRY = src
 
 all: run
@@ -18,7 +18,8 @@ debug:
 
 clean:
 	@find . -type d -name "__pycache__" -prune -exec rm -rf {} +
-	@rm -rf .mypy_cache .pytest_cache .ruff_cache
+	@rm -rf .mypy_cache .pytest_cache .ruff_cache .venv uv.lock
+	@rm -rf */*arcade*
 
 lint:
 	@flake8 .

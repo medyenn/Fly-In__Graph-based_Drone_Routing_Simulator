@@ -1,7 +1,6 @@
 """Reservation-aware Dijkstra path finder for Fly-In."""
 
 from __future__ import annotations
-
 import heapq
 import math
 from typing import Optional
@@ -23,7 +22,6 @@ class PathFinder:
 
     def find_path(self, start_name: str, end_name: str) -> Optional[list[str]]:
         """Find the best path while respecting current reservations."""
-        start = self.graph.get_zone(start_name)
         start_state = (start_name, 0)
         distances: dict[State, tuple[int, int]] = {start_state: (0, 0)}
         parents: dict[State, Optional[State]] = {start_state: None}
@@ -158,7 +156,6 @@ class PathFinder:
             next_name, next_turn = schedule[index + 1]
             if name == next_name:
                 continue
-            connection = self.graph.get_connection(name, next_name)
             z1, z2 = sorted((name, next_name))
             for current_turn in range(turn, next_turn):
                 key = (z1, z2, current_turn)

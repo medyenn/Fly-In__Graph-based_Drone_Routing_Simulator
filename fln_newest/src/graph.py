@@ -1,14 +1,6 @@
-"""Graph: owns all Zones and Connections, answers adjacency queries.
-
-Kept deliberately dumb: Graph knows nothing about drones, turns, or
-capacity rules over time - it is pure static network structure plus the
-live Zone/Connection occupancy objects it holds references to. PathFinder
-and Simulator query it; only MapParser mutates it (via add_zone /
-add_connection and the start/end setters).
-"""
+"""Graph: owns all Zones and Connections, answers adjacency queries."""
 
 from __future__ import annotations
-
 from typing import Optional
 
 from domain import Connection, Zone
@@ -24,9 +16,6 @@ class Graph:
     def __init__(self) -> None:
         self.zones: dict[str, Zone] = {}
         self.connections: list[Connection] = []
-        # Precomputed adjacency: zone name -> connections touching it.
-        # Built incrementally in add_zone/add_connection for O(1)-ish
-        # neighbor lookups without any external graph library.
         self._adjacency: dict[str, list[Connection]] = {}
         self._start: Optional[Zone] = None
         self._end: Optional[Zone] = None

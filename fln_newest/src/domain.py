@@ -1,9 +1,4 @@
-"""Domain objects for the Fly-In simulation.
-Holds the three "live state" classes that Zone/Connection/Drone-level
-rules from the subject map onto directly:
-* Zone       - a node: identity, position, live occupancy.
-* Connection - an edge: two endpoints, live traversal load.
-* Drone      - one agent: identity, position, assigned path, transit state."""
+"""Domain objects (zone, connection, drone) for the Fly-In simulation."""
 
 from __future__ import annotations
 
@@ -29,11 +24,7 @@ class Zone:
         color: Optional[str] = None,
         max_drones: Optional[int] = 1,
     ) -> None:
-        """Store zone identity/position/metadata and reset live occupancy.
-
-        max_drones of None means unlimited capacity (used for start/end
-        hubs, where MapParser forces this regardless of file metadata).
-        """
+        """Store zone identity/position/metadata and reset live occupancy."""
         self.name = name
         self.x = x
         self.y = y
@@ -41,8 +32,6 @@ class Zone:
         self.color = color
         self.max_drones = max_drones
         self.occupants: set[int] = set()
-        # Set by Graph.start / Graph.end setters, not by the constructor,
-        # so a Zone never has to know about the Graph that owns it.
         self.is_start = False
         self.is_end = False
 
@@ -134,12 +123,7 @@ class Connection:
 
 @dataclass
 class TransitState:
-    """An in-progress, committed 2-turn restricted-zone move.
-
-    Created the turn a drone departs toward a restricted zone; the drone
-    lands unconditionally on arrival_turn (its slot was reserved by the
-    Simulator at departure time), and cannot idle or turn back midway.
-    """
+    """An in-progress, committed 2-turn restricted-zone move."""
 
     connection: Connection
     destination: Zone
@@ -147,12 +131,7 @@ class TransitState:
 
 
 class Drone:
-    """One agent: identity, current position, and its assigned path.
-
-    `path` is the ordered list of zone names produced by PathFinder for
-    this drone; `path_index` is how far along it the drone currently is
-    (path[path_index] == current_zone.name once placed).
-    """
+    """One agent: identity, current position, and its assigned path."""
 
     def __init__(
         self, drone_id: int, start_zone: Zone, path: list[str]

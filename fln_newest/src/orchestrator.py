@@ -11,6 +11,7 @@ from domain import Drone
 from parser import MapParseError, MapParser
 from pathfinder import PathFinder
 from simulator import SimulationError, Simulator
+from visualizer import show_simulation
 
 
 class FlyInApp:
@@ -80,8 +81,6 @@ class FlyInApp:
             if self.args.summary:
                 print(f"Total turns: {len(log)}")
             if self.args.visual:
-                from visualizer import show_simulation
-
                 show_simulation(graph, log)
             return 0
         except MapParseError as exc:

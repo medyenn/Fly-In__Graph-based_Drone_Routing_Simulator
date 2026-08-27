@@ -1,5 +1,5 @@
-"""Parser for Fly-In map description files.
-Turns the map's text format into a validated Graph and drone count."""
+"""Parser for Fly-In map description files. Turns the map's
+text format into a validated Graph and drone count."""
 
 from __future__ import annotations
 
