@@ -1,5 +1,5 @@
 NAME = fly_in
-PYTHON = uv run python3 -m
+PYTHON = python3
 ENTRY = src
 
 all: run
