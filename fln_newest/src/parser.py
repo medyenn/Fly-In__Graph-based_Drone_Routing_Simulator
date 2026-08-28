@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import NoReturn
 
 from domain import Connection, Zone
-from graph import Graph
+from graph import Graph, GraphError
 
 ALLOWED_ZONE_TYPES = {"normal", "priority", "restricted", "blocked"}
 ZONE_METADATA_KEYS = {"zone", "color", "max_drones"}
@@ -135,10 +135,13 @@ class MapParser:
             max_drones=max_drones,
         )
         self.graph.add_zone(zone)
-        if kind == "start_hub":
-            self.graph.start = zone
-        elif kind == "end_hub":
-            self.graph.end = zone
+        try:
+            if kind == "start_hub":
+                self.graph.start = zone
+            elif kind == "end_hub":
+                self.graph.end = zone
+        except GraphError as exc:
+            self.error(str(exc))
 
     def parse_connection_line(self, remainder: str) -> None:
         """Parse a 'connection: <a>-<b> [metadata]' line body."""

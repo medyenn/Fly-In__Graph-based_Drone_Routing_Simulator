@@ -22,6 +22,10 @@ class PathFinder:
 
     def find_path(self, start_name: str, end_name: str) -> Optional[list[str]]:
         """Find the best path while respecting current reservations."""
+        if not self.graph.reachable(start_name, end_name):
+            self._last_schedule = []
+            return None
+
         start_state = (start_name, 0)
         distances: dict[State, tuple[int, int]] = {start_state: (0, 0)}
         parents: dict[State, Optional[State]] = {start_state: None}
@@ -44,6 +48,7 @@ class PathFinder:
 
             zone = self.graph.get_zone(name)
             priority = -neg_priority
+
             for connection in self.graph.neighbors(name):
                 neighbor = connection.other_end(zone)
                 move_cost = neighbor.entry_cost()

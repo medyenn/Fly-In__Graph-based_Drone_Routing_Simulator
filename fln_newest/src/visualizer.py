@@ -1,15 +1,7 @@
-"""Arcade visualizer for the Fly-In simulation.
-
-Every zone shows its type initial while empty. Once drones occupy a
-zone, the zone becomes a circle split into equal wedges - one per
-drone - so several drones sharing a zone always form one full circle.
-Pan the camera with the arrow keys, SPACE pauses, R replays.
-"""
+"""Arcade visualizer for the Fly-In simulation."""
 
 from __future__ import annotations
-
 import math
-
 import arcade
 
 from graph import Graph
@@ -20,7 +12,8 @@ MARGIN = 120
 MOVE_R = 12
 MOVE_TIME = 0.6
 HOLD_TIME = 0.9
-PAN_SPEED = 320
+PAN_SPEED = 350
+ROTATION = math.pi / 2  # point-up orientation for hexagons/pentagons
 
 BG = (16, 20, 28)
 LINE = (70, 76, 90)
@@ -49,6 +42,52 @@ ARROWS = {
 }
 
 
+def _ngon_point(
+    cx: float, cy: float, radius: float, angle: float, sides: int,
+    rotation: float = ROTATION,
+) -> tuple[float, float]:
+    """Point on a regular polygon's boundary at a given angle from its
+    center (angle need not land on a vertex)."""
+    seg = 2 * math.pi / sides
+    local = ((angle - rotation + seg / 2) % seg) - seg / 2
+    r = radius * math.cos(seg / 2) / math.cos(local)
+    return cx + r * math.cos(angle), cy + r * math.sin(angle)
+
+
+def _ngon_vertices(
+    cx: float, cy: float, radius: float, sides: int,
+    rotation: float = ROTATION,
+) -> list[tuple[float, float]]:
+    """The `sides` corner points of a regular polygon."""
+    step = 2 * math.pi / sides
+    return [
+        _ngon_point(cx, cy, radius, rotation + i * step, sides, rotation)
+        for i in range(sides)
+    ]
+
+
+class _TextPool:
+    """Reuse arcade.Text objects instead of calling arcade.draw_text() every
+    frame, which arcade flags as too slow for per-frame rendering."""
+
+    def __init__(self) -> None:
+        self._items: dict[str, arcade.Text] = {}
+
+    def draw(
+        self, key: str, text: str, x: float, y: float,
+        color: tuple[int, int, int], size: int,
+        anchor_x: str = "left", bold: bool = False,
+    ) -> None:
+        item = self._items.get(key)
+        if item is None:
+            item = arcade.Text(
+                text, x, y, color, size, anchor_x=anchor_x, bold=bold)
+            self._items[key] = item
+        else:
+            item.text, item.x, item.y, item.color = text, x, y, color
+        item.draw()
+
+
 class Visualizer(arcade.Window):
     """Play back a Fly-In simulation log over its graph."""
 
@@ -68,15 +107,16 @@ class Visualizer(arcade.Window):
 
         self.zone_of = self._start_positions()
         self.pos = {d: self._layout(z) for d, z in self.zone_of.items()}
-        # drone_id -> (start_xy, end_xy, destination_zone_or_None)
         self.moves: dict[
             int, tuple[tuple[float, float], tuple[float, float], str | None]
         ] = {}
         self.midway: set[int] = set()
         self.edge_of: dict[int, tuple[str, str]] = {}
         self.zone_r = 20
+        self.labels = _TextPool()
+        self._zone_number = {
+            name: i for i, name in enumerate(self.graph.zones, 1)}
 
-    # -- setup ------------------------------------------------------------
     def _fit(self) -> tuple[tuple[float, float], tuple[float, float]]:
         """Independent X/Y scales that stretch the map to fill the window,
         so zones sit as far apart as the window allows on each axis."""
@@ -101,6 +141,10 @@ class Visualizer(arcade.Window):
         """Apply the current camera pan to a world position."""
         return x + self.cam[0], y + self.cam[1]
 
+    def _screen_pos(self, zone_name: str) -> tuple[float, float]:
+        """Screen position of a zone: world layout plus the camera pan."""
+        return self._place(*self._layout(zone_name))
+
     def _start_positions(self) -> dict[int, str]:
         """Every drone begins the replay parked at the start hub."""
         if self.graph.start is None:
@@ -110,8 +154,6 @@ class Visualizer(arcade.Window):
             for token in line.split():
                 highest = max(highest, int(token[1:].split("-", 1)[0]))
         return {d: self.graph.start.name for d in range(1, highest + 1)}
-
-    # -- turn playback ------------------------------------------------------
 
     def _start_turn(self) -> None:
         """Begin animating every drone movement listed in this turn."""
@@ -172,8 +214,6 @@ class Visualizer(arcade.Window):
             start[1] + (end[1] - start[1]) * t,
         )
 
-    # -- update / input -------------------------------------------------------
-
     def on_update(self, dt: float) -> None:
         for key in self.keys_held:
             dx, dy = ARROWS[key]
@@ -223,71 +263,81 @@ class Visualizer(arcade.Window):
             for d in self.midway if d in self.edge_of
         }
         for conn in self.graph.connections:
-            ax, ay = self._place(*self._layout(conn.zone_a.name))
-            bx, by = self._place(*self._layout(conn.zone_b.name))
-            is_active = frozenset(
-                (conn.zone_a.name, conn.zone_b.name)) in active
+            a = self._screen_pos(conn.zone_a.name)
+            b = self._screen_pos(conn.zone_b.name)
+            is_active = (
+                frozenset((conn.zone_a.name, conn.zone_b.name)) in active)
             color, width = (LINE_ACTIVE, 3) if is_active else (LINE, 2)
-            arcade.draw_line(ax, ay, bx, by, color, width)
+            arcade.draw_line(*a, *b, color, width)
+
+    def _name_label_y(self, y: float, idx: int) -> float:
+        """Odd-numbered zones (by file order) get their name above; even
+        get it below, so neighboring labels don't collide."""
+        offset = self.zone_r + 18
+        return y + offset if idx % 2 else y - offset
 
     def _draw_zones(self) -> None:
-        """Draw every zone: a type letter when empty, drone wedges once
-        occupied."""
+        """Draw every zone as a hexagon (pentagon for start/end): a type
+        letter when empty, drone wedges once occupied."""
         moving = set(self.moves)
         arrived = self._arrived()
-        for zone in self.graph.zones.values():
-            x, y = self._place(*self._layout(zone.name))
+        for name, idx in self._zone_number.items():
+            zone = self.graph.zones[name]
+            x, y = self._screen_pos(name)
             ring = self._zone_color(zone)
-            settled = [
-                d for d, z in self.zone_of.items()
-                if z == zone.name and d not in moving
-            ]
-            settled += [d for d, z in arrived.items() if z == zone.name]
-            occupants = sorted(settled)
-            arcade.draw_circle_outline(x, y, self.zone_r + 2, ring, 2)
+            sides = 5 if (zone.is_start or zone.is_end) else 6
+            arcade.draw_polygon_outline(
+                _ngon_vertices(x, y, self.zone_r + 2, sides), ring, 2)
+
+            occupants = sorted(
+                [
+                    d
+                    for d, z in self.zone_of.items()
+                    if z == name and d not in moving]
+                + [d for d, z in arrived.items() if z == name]
+            )
             if occupants:
-                self._draw_occupants(x, y, occupants)
+                self._draw_occupants(x, y, sides, occupants)
             else:
                 fill = tuple(max(c // 5, 20) for c in ring)
-                arcade.draw_circle_filled(x, y, self.zone_r, fill)
+                arcade.draw_polygon_filled(
+                    _ngon_vertices(x, y, self.zone_r, sides), fill)
                 letter = ("S" if zone.is_start else
                           "E" if zone.is_end else
                           zone.zone_type[0].upper())
-                arcade.draw_text(letter, x, y - 8, ring, 16, bold=True,
-                                 anchor_x="center")
-            arcade.draw_text(zone.name, x, y + self.zone_r + 18, TEXT, 10,
-                             anchor_x="center")
+                self.labels.draw(f"letter-{name}", letter, x, y - 8, ring, 16,
+                                 anchor_x="center", bold=True)
+
+            self.labels.draw(
+                f"name-{name}", name, x, self._name_label_y(y, idx),
+                TEXT, 9, anchor_x="center")
 
     def _draw_occupants(
-        self, x: float, y: float, drones: list[int]
+        self, x: float, y: float, sides: int, drones: list[int]
     ) -> None:
-        """Split the zone circle into one wedge per occupying drone."""
+        """Split the zone polygon into one wedge per occupying drone."""
         n = len(drones)
-        step = 360 / n
+        step = 2 * math.pi / n
         for i in range(n):
-            a0, a1 = math.radians(i * step), math.radians((i + 1) * step)
-            steps = max(2, int(step / 10))
+            a0, a1 = i * step, (i + 1) * step
+            samples = max(2, int(math.degrees(step) / 10))
             arc = [
-                (x + self.zone_r * math.cos(a0 + (a1 - a0) * k / steps),
-                 y + self.zone_r * math.sin(a0 + (a1 - a0) * k / steps))
-                for k in range(steps + 1)
+                _ngon_point(
+                    x, y, self.zone_r, a0 + (a1 - a0) * k / samples, sides)
+                for k in range(samples + 1)
             ]
             arcade.draw_polygon_filled([(x, y), *arc], WHITE)
         for i in range(n if n > 1 else 0):
-            a = math.radians(i * step)
-            arcade.draw_line(
-                x, y, x + self.zone_r * math.cos(a),
-                y + self.zone_r * math.sin(a),
-                BG, 2,
-            )
+            ax, ay = _ngon_point(x, y, self.zone_r, i * step, sides)
+            arcade.draw_line(x, y, ax, ay, BG, 2)
         if n <= 6:
             r = self.zone_r * 0.55 if n > 1 else 0
             for i, drone_id in enumerate(drones):
-                mid = math.radians((i + 0.5) * step)
-                arcade.draw_text(
-                    f"D{drone_id}", x + r * math.cos(mid),
-                    y + r * math.sin(mid) - 6, BG, 10, bold=True,
-                    anchor_x="center",
+                mid = (i + 0.5) * step
+                self.labels.draw(
+                    f"d{drone_id}", f"D{drone_id}",
+                    x + r * math.cos(mid), y + r * math.sin(mid) - 6,
+                    BG, 10, anchor_x="center", bold=True,
                 )
 
     def _draw_moving_drones(self) -> None:
@@ -299,21 +349,20 @@ class Visualizer(arcade.Window):
             x, y = self._drone_screen_pos(drone_id)
             arcade.draw_circle_filled(x, y, MOVE_R, WHITE)
             arcade.draw_circle_outline(x, y, MOVE_R + 1, BG, 2)
-            arcade.draw_text(f"D{drone_id}", x, y - 5, BG, 9, bold=True,
-                             anchor_x="center")
+            self.labels.draw(f"d{drone_id}", f"D{drone_id}", x, y - 5, BG, 9,
+                             anchor_x="center", bold=True)
 
     def _draw_hud(self) -> None:
-        arcade.draw_text("FLY-IN", 30, self.height - 40, TEXT, 20, bold=True)
+        self.labels.draw(
+            "title", "FLY-IN", 30, self.height - 40, TEXT, 20, bold=True)
         status = "paused" if self.paused else "running"
-        arcade.draw_text(
-            f"turn {min(self.turn + 1, len(self.log))}/{len(self.log)}  "
-            f"{status}",
-            self.width - 260, self.height - 38, TEXT, 13,
-        )
-        arcade.draw_text(
-            "arrows: pan camera   space: pause   r: replay",
-            30, 28, TEXT, 12,
-        )
+        self.labels.draw(
+            "status",
+            f"turn {min(self.turn + 1, len(self.log))}/{len(self.log)} "
+            f" {status}", self.width - 260, self.height - 38, TEXT, 13,)
+        self.labels.draw(
+            "controls", "arrows: pan camera   space: pause   r: replay",
+            30, 28, TEXT, 12)
 
     @staticmethod
     def _zone_color(zone) -> tuple[int, int, int]:

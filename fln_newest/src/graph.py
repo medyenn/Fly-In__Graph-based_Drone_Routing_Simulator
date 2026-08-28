@@ -7,7 +7,7 @@ from domain import Connection, Zone
 
 
 class GraphError(Exception):
-    """Raised when the graph is queried for an unknown zone or connection."""
+    """Raised for an unknown zone/connection, or an invalid start/end hub."""
 
 
 class Graph:
@@ -19,6 +19,7 @@ class Graph:
         self._adjacency: dict[str, list[Connection]] = {}
         self._start: Optional[Zone] = None
         self._end: Optional[Zone] = None
+        self._blocked: set[str] = set()
 
     @property
     def start(self) -> Optional[Zone]:
@@ -41,13 +42,19 @@ class Graph:
     @end.setter
     def end(self, zone: Zone) -> None:
         """Set the end hub, keeping Zone.is_end in sync automatically."""
+        if zone.zone_type == "blocked":
+            raise GraphError("end_hub cannot be a blocked zone")
         if self._end is not None:
             self._end.is_end = False
         self._end = zone
         zone.is_end = True
 
     def add_zone(self, zone: Zone) -> None:
-        """Register a new zone. Called by MapParser while building the map."""
+        """Register a new zone. Blocked zones are kept out of the graph
+        entirely, so pathfinding never has to consider or detect them."""
+        if zone.zone_type == "blocked":
+            self._blocked.add(zone.name)
+            return
         self.zones[zone.name] = zone
         self._adjacency.setdefault(zone.name, [])
 
@@ -64,7 +71,7 @@ class Graph:
     def neighbors(self, zone_name: str) -> list[Connection]:
         """All connections touching zone_name."""
         if zone_name not in self.zones:
-            raise GraphError(f"unknown zone '{zone_name}'")
+            raise GraphError(self._missing_zone_message(zone_name))
         return self._adjacency.get(zone_name, [])
 
     def get_zone(self, name: str) -> Zone:
@@ -72,7 +79,13 @@ class Graph:
         try:
             return self.zones[name]
         except KeyError as exc:
-            raise GraphError(f"unknown zone '{name}'") from exc
+            raise GraphError(self._missing_zone_message(name)) from exc
+
+    def _missing_zone_message(self, name: str) -> str:
+        """Distinguish a blocked zone from a genuinely unknown one."""
+        if name in self._blocked:
+            return f"zone '{name}' is blocked"
+        return f"unknown zone '{name}'"
 
     def get_connection(self, name_a: str, name_b: str) -> Connection:
         """Safe connection lookup between two (expected-adjacent) zones."""
@@ -80,6 +93,23 @@ class Graph:
             if connection.connects(name_a, name_b):
                 return connection
         raise GraphError(f"no connection between '{name_a}' and '{name_b}'")
+
+    def reachable(self, start_name: str, end_name: str) -> bool:
+        """Plain reachability, ignoring turns and capacity. Blocked zones
+        are already excluded from the graph, so this alone tells us
+        whether any path can ever exist between the two zones."""
+        seen = {start_name}
+        stack = [start_name]
+        while stack:
+            name = stack.pop()
+            if name == end_name:
+                return True
+            for connection in self.neighbors(name):
+                other = connection.other_end(self.zones[name]).name
+                if other in self.zones and other not in seen:
+                    seen.add(other)
+                    stack.append(other)
+        return False
 
     def __repr__(self) -> str:
         return (
