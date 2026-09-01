@@ -19,7 +19,6 @@ class Graph:
         self._adjacency: dict[str, list[Connection]] = {}
         self._start: Optional[Zone] = None
         self._end: Optional[Zone] = None
-        self._blocked: set[str] = set()
 
     @property
     def start(self) -> Optional[Zone]:
@@ -50,11 +49,7 @@ class Graph:
         zone.is_end = True
 
     def add_zone(self, zone: Zone) -> None:
-        """Register a new zone. Blocked zones are kept out of the graph
-        entirely, so pathfinding never has to consider or detect them."""
-        if zone.zone_type == "blocked":
-            self._blocked.add(zone.name)
-            return
+        """Register a new zone. Called by MapParser while building the map."""
         self.zones[zone.name] = zone
         self._adjacency.setdefault(zone.name, [])
 
@@ -71,7 +66,7 @@ class Graph:
     def neighbors(self, zone_name: str) -> list[Connection]:
         """All connections touching zone_name."""
         if zone_name not in self.zones:
-            raise GraphError(self._missing_zone_message(zone_name))
+            raise GraphError(f"unknown zone '{zone_name}'")
         return self._adjacency.get(zone_name, [])
 
     def get_zone(self, name: str) -> Zone:
@@ -79,13 +74,7 @@ class Graph:
         try:
             return self.zones[name]
         except KeyError as exc:
-            raise GraphError(self._missing_zone_message(name)) from exc
-
-    def _missing_zone_message(self, name: str) -> str:
-        """Distinguish a blocked zone from a genuinely unknown one."""
-        if name in self._blocked:
-            return f"zone '{name}' is blocked"
-        return f"unknown zone '{name}'"
+            raise GraphError(f"unknown zone '{name}'") from exc
 
     def get_connection(self, name_a: str, name_b: str) -> Connection:
         """Safe connection lookup between two (expected-adjacent) zones."""
@@ -95,9 +84,8 @@ class Graph:
         raise GraphError(f"no connection between '{name_a}' and '{name_b}'")
 
     def reachable(self, start_name: str, end_name: str) -> bool:
-        """Plain reachability, ignoring turns and capacity. Blocked zones
-        are already excluded from the graph, so this alone tells us
-        whether any path can ever exist between the two zones."""
+        """Plain reachability, ignoring turns and capacity, skipping
+        blocked zones (they can never be entered by any drone)."""
         seen = {start_name}
         stack = [start_name]
         while stack:
@@ -105,10 +93,10 @@ class Graph:
             if name == end_name:
                 return True
             for connection in self.neighbors(name):
-                other = connection.other_end(self.zones[name]).name
-                if other in self.zones and other not in seen:
-                    seen.add(other)
-                    stack.append(other)
+                other = connection.other_end(self.zones[name])
+                if other.zone_type != "blocked" and other.name not in seen:
+                    seen.add(other.name)
+                    stack.append(other.name)
         return False
 
     def __repr__(self) -> str:
