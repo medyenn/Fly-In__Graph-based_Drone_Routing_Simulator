@@ -2,7 +2,6 @@
 text format into a validated Graph and drone count."""
 
 from __future__ import annotations
-
 from pathlib import Path
 from typing import NoReturn
 
