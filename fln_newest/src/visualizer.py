@@ -13,7 +13,7 @@ MOVE_R = 12
 MOVE_TIME = 0.6
 HOLD_TIME = 0.9
 PAN_SPEED = 350
-ROTATION = math.pi / 2  # point-up orientation for hexagons/pentagons
+ROTATION = math.pi / 2
 
 BG = (16, 20, 28)
 LINE = (70, 76, 90)

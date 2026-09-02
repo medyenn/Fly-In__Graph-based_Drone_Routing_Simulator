@@ -66,7 +66,7 @@ class FlyInApp:
 
             paths = pathfinder.get_drones_paths(nb_drones)
             if len(paths) != nb_drones:
-                print("Error: no valid paths for all drones.")
+                print("Error: No valid paths for all drones.")
                 return 1
 
             drones = [
@@ -83,9 +83,9 @@ class FlyInApp:
             if self.args.visual:
                 show_simulation(graph, log)
             return 0
-        except MapParseError as exc:
-            print(exc, file=sys.stderr)
+        except MapParseError as e:
+            print(e, file=sys.stderr)
             return 1
-        except (OSError, SimulationError) as exc:
-            print(f"Error: {exc}", file=sys.stderr)
+        except (OSError, SimulationError) as e:
+            print(f"Error: {e}", file=sys.stderr)
             return 1
