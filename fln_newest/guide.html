@@ -1,0 +1,2262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fly-In — Code Walkthrough (Your Implementation, Line by Line)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:            #0b1421;
+    --bg-alt:        #0e1a2b;
+    --panel:         #101d30;
+    --panel-hi:      #14263e;
+    --grid-line:     #1c3149;
+    --border:        #223a56;
+    --text:          #e7eef7;
+    --text-dim:      #9fb3c8;
+    --text-faint:    #6d84a0;
+    --amber:         #f2a65a;
+    --amber-dim:     #7a5a34;
+    --cyan:          #5eead4;
+    --cyan-dim:      #2c6b62;
+    --red:           #f16565;
+    --violet:        #c586ff;
+    --green:         #7ee08a;
+    --font-display:  'Space Grotesk', 'IBM Plex Sans', sans-serif;
+    --font-body:     'IBM Plex Sans', system-ui, sans-serif;
+    --font-mono:     'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(94,234,212,0.06), transparent 40%),
+      radial-gradient(circle at 85% 15%, rgba(242,166,90,0.05), transparent 40%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 42px 42px;
+    opacity:0.10; pointer-events:none; z-index:0;
+  }
+  a{ color:var(--cyan); text-decoration:none; }
+  a:hover{ text-decoration:underline; }
+  code, .mono{ font-family:var(--font-mono); }
+
+  .shell{ position:relative; z-index:1; display:grid; grid-template-columns: 300px 1fr; min-height:100vh; }
+  .sidebar{
+    position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+    padding:26px 20px 60px; border-right:1px solid var(--border);
+    background:linear-gradient(180deg, var(--bg-alt), var(--bg));
+  }
+  .sidebar::-webkit-scrollbar{ width:8px; }
+  .sidebar::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
+  .brand{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .brand svg{ width:26px; height:26px; flex:none; }
+  .brand-name{ font-family:var(--font-display); font-weight:700; font-size:1rem; letter-spacing:0.02em; }
+  .brand-sub{ font-size:0.68rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.1em; margin:0 0 20px 36px; }
+  .side-block{ margin-bottom:18px; }
+  .side-title{ font-size:0.64rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--text-faint); margin:0 0 8px 2px; font-weight:600; }
+  .step-jump{ display:block; color:var(--text); font-size:0.79rem; padding:6px 8px; border-radius:6px; border:1px solid var(--border); margin-bottom:5px; background:var(--panel); }
+  .step-jump:hover{ border-color:var(--cyan-dim); text-decoration:none; }
+  .step-jump .n{ font-family:var(--font-mono); color:var(--cyan); margin-right:6px; }
+  .step-jump.deep{ border-color:var(--amber-dim); }
+  .step-jump.deep .n{ color:var(--amber); }
+
+  main{ padding:52px 60px 120px; max-width:960px; }
+  .eyebrow{ font-family:var(--font-mono); font-size:0.72rem; letter-spacing:0.13em; text-transform:uppercase; color:var(--cyan); margin:0 0 12px; display:flex; align-items:center; gap:10px; }
+  .eyebrow .line{ height:1px; width:32px; background:var(--cyan-dim); display:inline-block; }
+  h1.title{ font-family:var(--font-display); font-weight:700; font-size:clamp(1.7rem, 3.4vw, 2.35rem); line-height:1.15; margin:0 0 14px; letter-spacing:-0.01em; }
+  h1.title .accent{ color:var(--amber); }
+  .lede{ font-size:1rem; color:var(--text-dim); max-width:76ch; margin:0 0 30px; }
+
+  .step{ margin-bottom:64px; scroll-margin-top:20px; padding-top:6px; border-top:1px solid var(--border); }
+  .step:first-of-type{ border-top:none; }
+  .step-head{ display:flex; align-items:baseline; gap:12px; margin-bottom:4px; flex-wrap:wrap; }
+  .step-num{ font-family:var(--font-mono); font-size:0.76rem; color:var(--bg); background:var(--cyan); padding:2px 9px; border-radius:100px; font-weight:700; white-space:nowrap; }
+  .step-num.deep{ background:var(--amber); }
+  h1.step-title{ font-family:var(--font-display); font-size:1.5rem; font-weight:700; margin:0; }
+  .step-file{ font-family:var(--font-mono); font-size:0.78rem; color:var(--text-faint); margin:6px 0 22px; }
+  .step-file code{ color:var(--cyan); }
+
+  section{ margin-bottom:28px; scroll-margin-top: 20px; }
+  h2{ font-family:var(--font-display); font-size:1.1rem; font-weight:600; margin:0 0 10px; scroll-margin-top:20px; color:var(--text); }
+  h3{ font-family:var(--font-display); font-size:0.98rem; font-weight:600; color:var(--amber); margin:18px 0 8px; }
+
+  p{ margin:0 0 12px; color:var(--text); }
+  p.dim{ color:var(--text-dim); font-size:0.92rem; }
+  ul, ol{ margin:0 0 14px; padding-left:20px; }
+  li{ margin-bottom:5px; }
+  strong{ color:#fff; font-weight:600; }
+  hr.rule{ border:none; border-top:1px solid var(--border); margin:30px 0; }
+
+  .box{ border:1px solid var(--border); border-left-width:3px; background:var(--panel); border-radius:8px; padding:13px 16px; margin:14px 0; }
+  .box .box-title{ font-family:var(--font-mono); font-size:0.66rem; text-transform:uppercase; letter-spacing:0.1em; font-weight:600; margin-bottom:6px; display:flex; align-items:center; gap:7px; }
+  .box.why{ border-left-color:var(--cyan); } .box.why .box-title{ color:var(--cyan); }
+  .box.pitfall{ border-left-color:var(--red); } .box.pitfall .box-title{ color:var(--red); }
+  .box.rule-box{ border-left-color:var(--amber); } .box.rule-box .box-title{ color:var(--amber); }
+  .box.next{ border-left-color:var(--green); } .box.next .box-title{ color:var(--green); }
+  .box.imports{ border-left-color:var(--violet); } .box.imports .box-title{ color:var(--violet); }
+  .box p:last-child, .box ul:last-child, .box ol:last-child{ margin-bottom:0; }
+
+  table{ width:100%; border-collapse:collapse; margin:12px 0 18px; font-size:0.86rem; }
+  th, td{ text-align:left; padding:7px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
+  th{ font-family:var(--font-mono); font-size:0.68rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-faint); font-weight:600; }
+  tr:last-child td{ border-bottom:none; }
+  td code{ color:var(--cyan); }
+  code.inline{ background:var(--panel-hi); border:1px solid var(--border); padding:1px 6px; border-radius:5px; font-size:0.86em; color:var(--cyan); }
+
+  pre{ background:#081019; border:1px solid var(--border); border-radius:8px; padding:14px 16px; overflow-x:auto; margin:10px 0 16px; font-family:var(--font-mono); font-size:0.8rem; line-height:1.55; color:#cfe3f5; }
+  pre .c{ color:var(--text-faint); font-style:italic; }
+  pre .k{ color:var(--violet); }
+  pre .s{ color:var(--green); }
+  pre .n{ color:var(--amber); }
+
+  .flow{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:14px 0 20px; font-family:var(--font-mono); font-size:0.78rem; }
+  .flow .node{ background:var(--panel-hi); border:1px solid var(--border); padding:6px 12px; border-radius:8px; color:var(--text); }
+  .flow .arrow{ color:var(--text-faint); }
+
+  details.qa{ border:1px solid var(--border); border-radius:8px; margin-bottom:8px; background:var(--panel); padding:2px 14px; }
+  details.qa summary{ cursor:pointer; padding:10px 0; font-weight:500; color:var(--text); list-style:none; display:flex; gap:10px; align-items:flex-start; font-size:0.9rem; }
+  details.qa summary::-webkit-details-marker{ display:none; }
+  details.qa summary::before{ content:"▸"; color:var(--cyan); flex:none; }
+  details.qa[open] summary::before{ content:"▾"; }
+  details.qa .answer{ padding:0 0 14px 20px; color:var(--text-dim); border-top:1px dashed var(--border); margin-top:2px; padding-top:10px; font-size:0.88rem; }
+
+  .callchain{ font-family:var(--font-mono); font-size:0.82rem; background:var(--panel-hi); border:1px solid var(--border); border-radius:8px; padding:10px 14px; margin:10px 0 18px; color:var(--cyan); }
+  .callchain .arr{ color:var(--text-faint); }
+
+  footer.next-foot{ margin-top:44px; padding:20px 22px; border-radius:12px; background:linear-gradient(135deg, rgba(94,234,212,0.08), rgba(242,166,90,0.05)); border:1px solid var(--border); }
+
+  @media (max-width: 880px){
+    .shell{ grid-template-columns:1fr; }
+    .sidebar{ position:relative; height:auto; }
+    main{ padding:32px 20px 90px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <nav class="sidebar" aria-label="Course navigation">
+    <div class="brand">
+      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="8" cy="30" r="3.4" fill="#5eead4"/>
+        <circle cx="20" cy="10" r="3.4" fill="#f2a65a"/>
+        <circle cx="32" cy="28" r="3.4" fill="#c586ff"/>
+        <path d="M8 30 L20 10 L32 28 L8 30" stroke="#22344a" stroke-width="1.4" fill="none"/>
+        <circle cx="14" cy="20" r="2" fill="#e7eef7"/>
+      </svg>
+      <span class="brand-name">FLY-IN</span>
+    </div>
+    <p class="brand-sub">Code walkthrough · your actual repo</p>
+
+    <div class="side-block">
+      <p class="side-title">Pipeline, in execution order</p>
+      <a class="step-jump" href="#step-0"><span class="n">00</span>Entry point &amp; CLI</a>
+      <a class="step-jump" href="#step-1"><span class="n">01</span>FlyInApp.run() overview</a>
+      <a class="step-jump" href="#step-2"><span class="n">02</span>MapParser.parse()</a>
+      <a class="step-jump" href="#step-3"><span class="n">03</span>Graph, Zone, Connection</a>
+      <a class="step-jump" href="#step-4"><span class="n">04</span>start/end sanity check</a>
+      <a class="step-jump deep" href="#step-5"><span class="n">05★</span>PathFinder (deep dive)</a>
+      <a class="step-jump" href="#step-6"><span class="n">06</span>Building the Drone fleet</a>
+      <a class="step-jump" href="#step-7"><span class="n">07</span>Simulator.run() overview</a>
+      <a class="step-jump" href="#step-8"><span class="n">08</span>step(): the turn engine</a>
+      <a class="step-jump" href="#step-9"><span class="n">09</span>Printing the log</a>
+      <a class="step-jump deep" href="#step-10"><span class="n">10★</span>Visualizer (deep dive)</a>
+      <a class="step-jump" href="#step-11"><span class="n">11</span>Full pipeline recap</a>
+    </div>
+  </nav>
+
+  <main>
+
+    <p class="eyebrow"><span class="line"></span> Fly-In · your implementation · walked start to finish</p>
+    <h1 class="title">What happens, in order, from <span class="accent">the moment you run <code>python -m src map.txt</code></span></h1>
+    <p class="lede">
+      This is not the generic 42-subject explanation — it is <strong>your code</strong>, read top to bottom in the
+      exact order Python executes it. Every step below is only explained once it is actually called by the previous
+      step. Each section shows the real function, explains every import/keyword/loop inside it, then shows exactly
+      what it <code class="inline">return</code>s and how that return value feeds the next step. The two starred
+      steps — <strong>PathFinder</strong> and <strong>Visualizer</strong> — get the deepest treatment, line by line.
+    </p>
+
+    <!-- ================================================================ -->
+    <div class="step" id="step-0">
+      <div class="step-head"><span class="step-num">STEP 00</span><h1 class="step-title">Entry point &amp; CLI parsing</h1></div>
+      <p class="step-file">File: <code>src/__main__.py</code> → calls into <code>src/orchestrator.py</code></p>
+
+      <section>
+        <h2>What runs first</h2>
+        <p>
+          Running <code class="inline">python -m src maps/easy/01_linear_path.txt</code> makes Python execute
+          <code class="inline">src/__main__.py</code>, the special filename Python looks for when you run a
+          package with <code class="inline">-m</code>.
+        </p>
+        <pre><span class="k">from</span> __future__ <span class="k">import</span> annotations
+<span class="k">from</span> orchestrator <span class="k">import</span> FlyInApp
+
+
+<span class="k">def</span> main() -> int:
+    <span class="k">return</span> FlyInApp.from_argv().run()
+
+
+<span class="k">if</span> __name__ == <span class="s">'__main__'</span>:
+    main()</pre>
+        <p>Three things worth naming explicitly:</p>
+        <ul>
+          <li><code class="inline">from __future__ import annotations</code> — makes every type hint in the file
+            (e.g. <code class="inline">list[str]</code>, <code class="inline">Zone | None</code>) a plain string at
+            runtime instead of being evaluated immediately. This is why the code can use modern syntax like
+            <code class="inline">str | Path</code> even though it declares Python ≥ 3.10 support broadly — it costs
+            nothing at import time and only matters to <code class="inline">mypy</code>.</li>
+          <li><code class="inline">if __name__ == '__main__':</code> — the standard guard so that importing this
+            module (e.g. from a test) doesn't accidentally run <code class="inline">main()</code>.</li>
+          <li><code class="inline">main()</code> returns an <code class="inline">int</code> exit code but doesn't
+            call <code class="inline">sys.exit()</code> itself in this file — that plumbing is left to whatever
+            invokes <code class="inline">-m src</code> at the OS level, keeping this file to 13 lines.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>What gets called: <code class="inline">FlyInApp.from_argv()</code></h2>
+        <p class="step-file">File: <code>src/orchestrator.py</code></p>
+        <pre><span class="k">import</span> argparse
+<span class="k">import</span> sys
+<span class="k">from</span> pathlib <span class="k">import</span> Path
+<span class="k">from</span> typing <span class="k">import</span> Sequence
+
+<span class="c"># ...</span>
+
+<span class="k">@classmethod</span>
+<span class="k">def</span> from_argv(cls, argv: Sequence[str] | None = <span class="k">None</span>) -> <span class="s">"FlyInApp"</span>:
+    <span class="k">return</span> cls(cls._parse_args(argv))</pre>
+        <p>
+          <code class="inline">@classmethod</code> means this runs on the <em>class</em> <code class="inline">FlyInApp</code>
+          itself (<code class="inline">cls</code>), not on an instance — this is the standard "alternate constructor"
+          pattern: it builds the <code class="inline">argparse.Namespace</code> first, then feeds it to
+          <code class="inline">FlyInApp.__init__</code>. <code class="inline">argv: Sequence[str] | None = None</code>
+          lets tests call <code class="inline">FlyInApp.from_argv(["map.txt", "--summary"])</code> directly instead
+          of reading real command-line arguments — that's why it's threaded all the way down to
+          <code class="inline">argparse.parse_args(argv)</code>, which treats <code class="inline">None</code> as
+          "use <code class="inline">sys.argv</code>".
+        </p>
+        <h3>_parse_args(argv) — the actual CLI definition</h3>
+        <pre><span class="k">parser</span> = argparse.ArgumentParser(description=<span class="s">"Route a fleet..."</span>)
+parser.add_argument(<span class="s">"map"</span>, type=Path, help=<span class="s">"path to the map file"</span>)
+parser.add_argument(<span class="s">"--no-color"</span>, action=<span class="s">"store_true"</span>)
+parser.add_argument(<span class="s">"--map-info"</span>, action=<span class="s">"store_true"</span>)
+parser.add_argument(<span class="s">"--summary"</span>, action=<span class="s">"store_true"</span>)
+parser.add_argument(<span class="s">"--visual"</span>, action=<span class="s">"store_true"</span>)
+<span class="k">return</span> parser.parse_args(argv)</pre>
+        <p>
+          <code class="inline">argparse</code> is Python's standard-library CLI-argument parser. Each
+          <code class="inline">add_argument</code> call declares one accepted flag. <code class="inline">map</code>
+          has no leading dashes, so it's <strong>positional and required</strong> — argparse converts the raw string
+          straight to a <code class="inline">pathlib.Path</code> object because of <code class="inline">type=Path</code>.
+          The four <code class="inline">--flag</code> arguments use <code class="inline">action="store_true"</code>,
+          meaning they default to <code class="inline">False</code> and flip to <code class="inline">True</code> only
+          if present — no value needed after them. The call returns an <code class="inline">argparse.Namespace</code>
+          object, essentially a simple bag of attributes: <code class="inline">args.map</code>,
+          <code class="inline">args.summary</code>, <code class="inline">args.visual</code>, etc.
+        </p>
+        <div class="box next"><div class="box-title">→ used next</div>
+        <p>That <code class="inline">Namespace</code> is stored as <code class="inline">self.args</code> on the new
+        <code class="inline">FlyInApp</code> instance. <code class="inline">from_argv()</code> returns that instance,
+        and <code class="inline">__main__.py</code> immediately calls <code class="inline">.run()</code> on it —
+        that's Step 01.</p></div>
+      </section>
+    </div>
+
+    <!-- ================================================================ -->
+    <div class="step" id="step-1">
+      <div class="step-head"><span class="step-num">STEP 01</span><h1 class="step-title">FlyInApp.run() — the whole pipeline in one function</h1></div>
+      <p class="step-file">File: <code>src/orchestrator.py</code>, method <code>run()</code></p>
+
+      <section>
+        <h2>The full method</h2>
+        <pre><span class="k">def</span> run(self) -> int:
+    <span class="k">try</span>:
+        graph, nb_drones = MapParser(self.args.map).parse()
+        pathfinder = PathFinder(graph)
+        start = graph.start
+        end = graph.end
+        <span class="k">if</span> start <span class="k">is</span> <span class="k">None</span> <span class="k">or</span> end <span class="k">is</span> <span class="k">None</span>:
+            <span class="k">raise</span> MapParseError(<span class="s">"start or end hub is missing"</span>, 0)
+
+        paths = pathfinder.get_drones_paths(nb_drones)
+        <span class="k">if</span> len(paths) != nb_drones:
+            print(<span class="s">"Error: No valid paths for all drones."</span>)
+            <span class="k">return</span> 1
+
+        drones = [
+            Drone(i, start, paths[i - 1])
+            <span class="k">for</span> i <span class="k">in</span> range(1, nb_drones + 1)
+        ]
+        simulator = Simulator(graph, drones)
+        log = simulator.run()
+
+        <span class="k">for</span> line <span class="k">in</span> log:
+            print(line)
+        <span class="k">if</span> self.args.summary:
+            print(f<span class="s">"Total turns: {len(log)}"</span>)
+        <span class="k">if</span> self.args.visual:
+            show_simulation(graph, log)
+        <span class="k">return</span> 0
+    <span class="k">except</span> MapParseError <span class="k">as</span> e:
+        print(e, file=sys.stderr)
+        <span class="k">return</span> 1
+    <span class="k">except</span> (OSError, SimulationError) <span class="k">as</span> e:
+        print(f<span class="s">"Error: {e}"</span>, file=sys.stderr)
+        <span class="k">return</span> 1</pre>
+        <p>
+          This one method <em>is</em> the pipeline diagram from the roadmap, turned into real code. Everything below
+          in this course is one of these lines expanded to full depth, in the order they execute:
+        </p>
+        <div class="flow">
+          <span class="node">MapParser(...).parse()</span><span class="arrow">→</span>
+          <span class="node">graph, nb_drones</span><span class="arrow">→</span>
+          <span class="node">PathFinder(graph)</span><span class="arrow">→</span>
+          <span class="node">pathfinder.get_drones_paths(n)</span><span class="arrow">→</span>
+          <span class="node">paths</span><span class="arrow">→</span>
+          <span class="node">Drone(...) × n</span><span class="arrow">→</span>
+          <span class="node">Simulator(...).run()</span><span class="arrow">→</span>
+          <span class="node">log</span><span class="arrow">→</span>
+          <span class="node">print / show_simulation</span>
+        </div>
+        <p>
+          The <code class="inline">try/except</code> wraps the <em>entire</em> pipeline in exactly one place — this
+          is the "single custom exception, one top-level catch" design from Phase 4/9 of the subject brief, applied
+          for real: <code class="inline">MapParseError</code> catches every malformed-map problem,
+          <code class="inline">SimulationError</code> catches a runaway simulation (see Step 07), and
+          <code class="inline">OSError</code> catches things like "map file doesn't exist" bubbling up from
+          <code class="inline">Path.open()</code> inside the parser. Both branches print to
+          <code class="inline">sys.stderr</code> (so error text doesn't pollute the drone-movement log printed to
+          stdout) and return exit code <code class="inline">1</code>.
+        </p>
+      </section>
+    </div>
+
+    <!-- ================================================================ -->
+    <div class="step" id="step-2">
+      <div class="step-head"><span class="step-num">STEP 02</span><h1 class="step-title">MapParser(self.args.map).parse()</h1></div>
+      <p class="step-file">File: <code>src/parser.py</code></p>
+
+      <section>
+        <h2><code class="inline">MapParser.__init__</code> — what gets built before reading a single line</h2>
+        <pre><span class="k">def</span> __init__(self, filepath: str | Path) -> <span class="k">None</span>:
+    self.map_path = Path(filepath)
+    self.graph = Graph()
+    self.nb_drones = 0
+    self.line_number = 0
+    self.drone_count_seen = <span class="k">False</span>
+    self.start_seen = <span class="k">False</span>
+    self.end_seen = <span class="k">False</span>
+    self.connection_keys: set[frozenset[str]] = set()</pre>
+        <p>
+          An empty <code class="inline">Graph()</code> (Step 03) is created immediately — the parser's whole job is
+          to fill it in. <code class="inline">connection_keys</code> is a <code class="inline">set</code> of
+          <code class="inline">frozenset</code> objects. A <code class="inline">frozenset({"a","b"})</code> equals
+          <code class="inline">frozenset({"b","a"})</code> — order doesn't matter — which is exactly how the parser
+          later detects that <code class="inline">connection: a-b</code> and <code class="inline">connection: b-a</code>
+          are the same duplicate connection without writing extra comparison logic.
+        </p>
+      </section>
+
+      <section>
+        <h2><code class="inline">parse()</code> — the line-reading loop</h2>
+        <pre><span class="k">def</span> parse(self) -> tuple[Graph, int]:
+    <span class="k">with</span> self.map_path.open(encoding=<span class="s">"utf-8"</span>) <span class="k">as</span> handle:
+        <span class="k">for</span> self.line_number, raw_line <span class="k">in</span> enumerate(handle, start=1):
+            line = self.strip_comment(raw_line)
+            <span class="k">if</span> line:
+                self.dispatch_line(line)
+
+    <span class="k">if</span> <span class="k">not</span> self.drone_count_seen:
+        self.error(<span class="s">"missing required 'nb_drones:' line"</span>)
+    <span class="k">if</span> <span class="k">not</span> self.start_seen:
+        self.error(<span class="s">"map must define exactly one start_hub"</span>)
+    <span class="k">if</span> <span class="k">not</span> self.end_seen:
+        self.error(<span class="s">"map must define exactly one end_hub"</span>)
+
+    <span class="k">return</span> self.graph, self.nb_drones</pre>
+        <p>
+          <code class="inline">with self.map_path.open(...) as handle:</code> is a context manager — it guarantees
+          the file is closed even if a <code class="inline">MapParseError</code> is raised halfway through, which is
+          exactly the "context managers for files" robustness rule from the subject. Opening a file object makes it
+          directly iterable line-by-line; wrapping it in <code class="inline">enumerate(handle, start=1)</code> gives
+          you <code class="inline">(line_number, raw_line)</code> pairs starting at 1 instead of 0 — and because the
+          loop variable is written straight into <code class="inline">self.line_number</code>, <em>every</em> method
+          called afterward (all the way down into <code class="inline">error()</code>) automatically knows which
+          line it's working on without needing it passed as a parameter.
+        </p>
+        <p>
+          For every physical line: <code class="inline">strip_comment()</code> runs first (see below), and
+          <code class="inline">if line:</code> skips blank lines and lines that were <em>only</em> a comment (which
+          strip down to an empty string). Only non-empty content reaches <code class="inline">dispatch_line()</code>.
+          After the loop finishes (file fully read), three post-checks fire — these can only be checked
+          <em>after</em> the whole file is seen, which is exactly the ordering rule from the roadmap ("only after the
+          whole file is read: confirm exactly one start and one end hub exist").
+        </p>
+        <div class="box next"><div class="box-title">→ return value</div>
+        <p><code class="inline">parse()</code> returns the tuple <code class="inline">(self.graph, self.nb_drones)</code>.
+        Back in <code class="inline">orchestrator.run()</code>, this is unpacked straight into
+        <code class="inline">graph, nb_drones = MapParser(...).parse()</code> — the fully-built <code class="inline">Graph</code>
+        is now ready for <code class="inline">PathFinder</code> in Step 05.</p></div>
+      </section>
+
+      <section>
+        <h2><code class="inline">strip_comment(line)</code></h2>
+        <pre><span class="k">def</span> strip_comment(self, line: str) -> str:
+    <span class="k">return</span> line.split(<span class="s">"#"</span>, 1)[0].strip()</pre>
+        <p>
+          <code class="inline">"...".split("#", 1)</code> splits on the <em>first</em> <code class="inline">#</code>
+          only (the <code class="inline">1</code> is "max splits"), so a <code class="inline">#</code> that could
+          appear later in a value doesn't chop the line again. <code class="inline">[0]</code> takes everything
+          before that first <code class="inline">#</code>, and <code class="inline">.strip()</code> removes
+          leading/trailing whitespace and the trailing newline character every line from a file iterator carries.
+        </p>
+      </section>
+
+      <section>
+        <h2><code class="inline">dispatch_line(line)</code> — routing by prefix</h2>
+        <pre><span class="k">def</span> dispatch_line(self, line: str) -> <span class="k">None</span>:
+    <span class="k">if</span> line.startswith(<span class="s">"nb_drones:"</span>):
+        self.nb_drones = self.parse_drone_count(line)
+        self.drone_count_seen = <span class="k">True</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="k">not</span> self.drone_count_seen:
+        self.error(<span class="s">"the first instruction in the map must be 'nb_drones: &lt;count&gt;'"</span>)
+
+    <span class="k">for</span> prefix <span class="k">in</span> ZONE_PREFIXES:
+        <span class="k">if</span> line.startswith(prefix):
+            kind = prefix[:-1]
+            self.parse_zone_line(line[len(prefix):], kind)
+            <span class="k">return</span>
+
+    <span class="k">if</span> line.startswith(<span class="s">"connection:"</span>):
+        self.parse_connection_line(line[len(<span class="s">"connection:"</span>):])
+        <span class="k">return</span>
+
+    self.error(f<span class="s">"unrecognized line type: '{line}'"</span>)</pre>
+        <p>
+          <code class="inline">ZONE_PREFIXES = ("start_hub:", "end_hub:", "hub:")</code> is a module-level constant.
+          The <code class="inline">for prefix in ZONE_PREFIXES</code> loop tries each one in turn; on a match,
+          <code class="inline">prefix[:-1]</code> strips the trailing colon to get the plain <code class="inline">kind</code>
+          string (<code class="inline">"start_hub"</code>, <code class="inline">"end_hub"</code>, or
+          <code class="inline">"hub"</code>), and <code class="inline">line[len(prefix):]</code> slices off the
+          matched prefix, passing only the remainder (e.g. <code class="inline">" start 0 0 [color=green]"</code>)
+          onward. The early-return after every branch means at most one handler ever runs per line, and falling
+          through all of them without an <code class="inline">return</code> means the line matched nothing legal —
+          hence the final catch-all <code class="inline">self.error(...)</code>.
+        </p>
+        <p>
+          This function also enforces one more ordering rule inline: if the very first
+          non-comment/non-blank line isn't <code class="inline">nb_drones:</code>, <code class="inline">drone_count_seen</code>
+          is still <code class="inline">False</code> and the very next check raises immediately — satisfying "line 1
+          must be nb_drones."
+        </p>
+      </section>
+
+      <section>
+        <h2><code class="inline">parse_drone_count(line)</code></h2>
+        <pre><span class="k">def</span> parse_drone_count(self, line: str) -> int:
+    _, _, value = line.partition(<span class="s">":"</span>)
+    <span class="k">return</span> self.validate_positive_int(value.strip(), <span class="s">"nb_drones"</span>)</pre>
+        <p>
+          <code class="inline">str.partition(":")</code> splits into exactly 3 pieces: everything before the
+          separator, the separator itself, and everything after — here the first two pieces are thrown away with
+          <code class="inline">_</code> (Python's conventional "I don't need this" name), keeping only
+          <code class="inline">value</code>, the raw number as text. It's then handed to
+          <code class="inline">validate_positive_int</code> (shared helper, described below) which does the actual
+          int-parsing and returns a plain <code class="inline">int</code>. That becomes
+          <code class="inline">self.nb_drones</code> back in <code class="inline">dispatch_line</code>.
+        </p>
+      </section>
+
+      <section>
+        <h2><code class="inline">parse_zone_line(remainder, kind)</code> — building one <code class="inline">Zone</code></h2>
+        <pre><span class="k">def</span> parse_zone_line(self, remainder: str, kind: str) -> <span class="k">None</span>:
+    head, meta_raw = self.split_metadata(remainder)
+    tokens = head.split()
+    <span class="k">if</span> len(tokens) != 3:
+        self.error(<span class="s">"expected '&lt;name&gt; &lt;x&gt; &lt;y&gt;' after zone prefix"</span>)
+    name, x_str, y_str = tokens
+
+    <span class="k">if</span> <span class="s">"-"</span> <span class="k">in</span> name:
+        self.error(f<span class="s">"zone name '{name}' must not contain '-'"</span>)
+    <span class="k">if</span> name <span class="k">in</span> self.graph.zones:
+        self.error(f<span class="s">"duplicate zone name '{name}'"</span>)
+
+    x = self.validate_integer(x_str, <span class="s">"x coordinate"</span>)
+    y = self.validate_integer(y_str, <span class="s">"y coordinate"</span>)
+
+    metadata = self.parse_metadata(meta_raw, ZONE_METADATA_KEYS)
+    zone_type = metadata.get(<span class="s">"zone"</span>, <span class="s">"normal"</span>)
+    self.validate_zone_type(zone_type)
+
+    max_drones_raw = metadata.get(<span class="s">"max_drones"</span>, <span class="s">"1"</span>)
+    max_drones: int | None = self.validate_positive_int(max_drones_raw, <span class="s">"max_drones"</span>)
+    color = metadata.get(<span class="s">"color"</span>)
+
+    <span class="k">if</span> kind == <span class="s">"start_hub"</span>:
+        <span class="k">if</span> self.start_seen:
+            self.error(<span class="s">"only one start_hub is allowed"</span>)
+        self.start_seen = <span class="k">True</span>
+        max_drones = <span class="k">None</span>
+    <span class="k">elif</span> kind == <span class="s">"end_hub"</span>:
+        <span class="k">if</span> self.end_seen:
+            self.error(<span class="s">"only one end_hub is allowed"</span>)
+        self.end_seen = <span class="k">True</span>
+        max_drones = <span class="k">None</span>
+
+    zone = Zone(name=name, x=x, y=y, zone_type=zone_type, color=color, max_drones=max_drones)
+    self.graph.add_zone(zone)
+    <span class="k">try</span>:
+        <span class="k">if</span> kind == <span class="s">"start_hub"</span>:
+            self.graph.start = zone
+        <span class="k">elif</span> kind == <span class="s">"end_hub"</span>:
+            self.graph.end = zone
+    <span class="k">except</span> GraphError <span class="k">as</span> exc:
+        self.error(str(exc))</pre>
+        <p>Read top to bottom, this is doing, in order:</p>
+        <ol>
+          <li><strong>Split off metadata</strong> via <code class="inline">split_metadata</code> (below), leaving
+            <code class="inline">head</code> = <code class="inline">"start 0 0"</code> and
+            <code class="inline">meta_raw</code> = <code class="inline">"color=green"</code>.</li>
+          <li><strong>Tokenize</strong> the head with the parameterless <code class="inline">str.split()</code>,
+            which splits on any run of whitespace — must yield exactly 3 tokens
+            (<code class="inline">name</code>, <code class="inline">x</code>, <code class="inline">y</code>) or it's
+            an error.</li>
+          <li><strong>Validate the name</strong>: no dash (dashes are reserved for connection syntax
+            <code class="inline">a-b</code>), and not already used — <code class="inline">name in self.graph.zones</code>
+            is an O(1) dict membership check since <code class="inline">graph.zones</code> is a
+            <code class="inline">dict[str, Zone]</code> (Step 03).</li>
+          <li><strong>Parse coordinates</strong> as plain integers.</li>
+          <li><strong>Parse metadata</strong> into a small <code class="inline">dict[str, str]</code>, then pull out
+            <code class="inline">zone</code> (defaulting to <code class="inline">"normal"</code> via
+            <code class="inline">dict.get(key, default)</code>), <code class="inline">max_drones</code> (defaulting
+            to <code class="inline">"1"</code>), and <code class="inline">color</code> (defaulting to
+            <code class="inline">None</code> since <code class="inline">.get("color")</code> has no default arg).</li>
+          <li><strong>Enforce the single-start / single-end rule</strong> and — critically —
+            <strong>force <code class="inline">max_drones = None</code></strong> on start/end hubs regardless of
+            what the file said, which is the "ignore max_drones on start/end, as a post-processing step on those
+            two zones specifically" rule from the roadmap. <code class="inline">None</code> is later read by
+            <code class="inline">Zone.has_space()</code> as "unlimited."</li>
+          <li><strong>Construct the <code class="inline">Zone</code></strong> object and register it with
+            <code class="inline">self.graph.add_zone(zone)</code>.</li>
+          <li><strong>Wire it as start/end</strong> on the graph, via property setters that can themselves raise —
+            e.g. trying to make a <code class="inline">blocked</code> zone the end hub raises
+            <code class="inline">GraphError</code> deep inside <code class="inline">Graph.end</code>'s setter (Step 03);
+            that's caught right here and re-raised as the parser's own <code class="inline">MapParseError</code> via
+            <code class="inline">self.error(str(exc))</code>, so every failure path — whatever its origin — surfaces
+            through the one exception type the top-level <code class="inline">try/except</code> in
+            <code class="inline">orchestrator.run()</code> knows how to catch.</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2><code class="inline">parse_connection_line(remainder)</code> — building one <code class="inline">Connection</code></h2>
+        <pre><span class="k">def</span> parse_connection_line(self, remainder: str) -> <span class="k">None</span>:
+    head, meta_raw = self.split_metadata(remainder)
+
+    <span class="k">if</span> head.count(<span class="s">"-"</span>) != 1:
+        self.error(<span class="s">"expected 'connection: &lt;name1&gt;-&lt;name2&gt;'"</span>)
+    name_a, name_b = (part.strip() <span class="k">for</span> part <span class="k">in</span> head.split(<span class="s">"-"</span>, 1))
+
+    <span class="k">if</span> name_a == name_b:
+        self.error(f<span class="s">"connection cannot link '{name_a}' to itself"</span>)
+    <span class="k">if</span> name_a <span class="k">not in</span> self.graph.zones:
+        self.error(f<span class="s">"connection references unknown zone '{name_a}'"</span>)
+    <span class="k">if</span> name_b <span class="k">not in</span> self.graph.zones:
+        self.error(f<span class="s">"connection references unknown zone '{name_b}'"</span>)
+
+    key = frozenset({name_a, name_b})
+    <span class="k">if</span> key <span class="k">in</span> self.connection_keys:
+        self.error(f<span class="s">"connection '{name_a}-{name_b}' already defined"</span>)
+    self.connection_keys.add(key)
+
+    metadata = self.parse_metadata(meta_raw, CONNECTION_METADATA_KEYS)
+    capacity = self.validate_positive_int(metadata.get(<span class="s">"max_link_capacity"</span>, <span class="s">"1"</span>), <span class="s">"max_link_capacity"</span>)
+
+    connection = Connection(
+        zone_a=self.graph.zones[name_a],
+        zone_b=self.graph.zones[name_b],
+        max_link_capacity=capacity,
+    )
+    self.graph.add_connection(connection)</pre>
+        <p>
+          <code class="inline">head.count("-") != 1</code> is a strict guard: <em>exactly</em> one dash is allowed in
+          the head — which is precisely why zone names may never contain a dash (enforced back in
+          <code class="inline">parse_zone_line</code>): otherwise <code class="inline">"maze-a1-maze-a2"</code>
+          would be ambiguous. <code class="inline">head.split("-", 1)</code> then confidently splits on that single
+          dash. Both endpoint names must already exist in <code class="inline">self.graph.zones</code> — this is why
+          the roadmap's ordering rule ("parse all zone lines before any connection line") matters in practice: this
+          check would otherwise reject perfectly valid forward references. The duplicate check reuses the same
+          <code class="inline">frozenset</code> trick described in <code class="inline">__init__</code>. Finally the
+          real <code class="inline">Zone</code> objects (not just their names) are looked up from
+          <code class="inline">self.graph.zones</code> and passed into <code class="inline">Connection(...)</code>,
+          so the <code class="inline">Connection</code> holds live references it can mutate later during simulation.
+        </p>
+      </section>
+
+      <section>
+        <h2>Two small shared helpers used above</h2>
+        <pre><span class="k">def</span> split_metadata(self, remainder: str) -> tuple[str, str]:
+    start = remainder.find(<span class="s">"["</span>)
+    <span class="k">if</span> start == -1:
+        <span class="k">return</span> remainder.strip(), <span class="s">""</span>
+    <span class="k">if</span> <span class="k">not</span> remainder.rstrip().endswith(<span class="s">"]"</span>):
+        self.error(<span class="s">"unterminated metadata block, missing ']'"</span>)
+    end = remainder.rfind(<span class="s">"]"</span>)
+    <span class="k">return</span> remainder[:start].strip(), remainder[start + 1:end].strip()
+
+<span class="k">def</span> parse_metadata(self, raw: str, allowed_keys: set[str]) -> dict[str, str]:
+    metadata: dict[str, str] = {}
+    <span class="k">if</span> <span class="k">not</span> raw:
+        <span class="k">return</span> metadata
+    <span class="k">for</span> token <span class="k">in</span> raw.split():
+        <span class="k">if</span> token.count(<span class="s">"="</span>) != 1:
+            self.error(f<span class="s">"malformed metadata token '{token}'"</span>)
+        key, value = token.split(<span class="s">"="</span>, 1)
+        <span class="k">if</span> key <span class="k">not in</span> allowed_keys:
+            self.error(f<span class="s">"unknown metadata key '{key}' for this line type"</span>)
+        <span class="k">if</span> key <span class="k">in</span> metadata:
+            self.error(f<span class="s">"duplicate metadata key '{key}'"</span>)
+        metadata[key] = value
+    <span class="k">return</span> metadata</pre>
+        <p>
+          <code class="inline">split_metadata</code> finds the <em>first</em> <code class="inline">[</code> with
+          <code class="inline">str.find</code> (returns <code class="inline">-1</code> if absent — no metadata block
+          at all is valid) and the <em>last</em> <code class="inline">]</code> with <code class="inline">str.rfind</code>,
+          so it correctly captures a metadata block even though the same character never appears twice in practice —
+          and rejects a block that opens with <code class="inline">[</code> but never closes.
+          <code class="inline">parse_metadata</code> is shared by both zone and connection lines — the caller passes
+          in which keys are legal for that line type (<code class="inline">ZONE_METADATA_KEYS = {"zone", "color",
+          "max_drones"}</code> vs. <code class="inline">CONNECTION_METADATA_KEYS = {"max_link_capacity"}</code>), so
+          writing <code class="inline">max_link_capacity=2</code> on a <code class="inline">hub:</code> line is
+          rejected as an unknown key for that context, and vice versa.
+        </p>
+        <pre><span class="k">def</span> validate_zone_type(self, value: str) -> str: ...      <span class="c"># must be in ALLOWED_ZONE_TYPES</span>
+<span class="k">def</span> validate_integer(self, value: str, field_name: str) -> int: ...     <span class="c"># int(value) or raise</span>
+<span class="k">def</span> validate_positive_int(self, value: str, field_name: str) -> int: ... <span class="c"># validate_integer + &gt; 0 check</span>
+<span class="k">def</span> error(self, message: str) -> NoReturn:
+    <span class="k">raise</span> MapParseError(message, self.line_number)</pre>
+        <p>
+          <code class="inline">validate_positive_int</code> calls <code class="inline">validate_integer</code>
+          internally — no code duplication between "must be an int" and "must be a positive int." Every single
+          validation failure across the entire parser funnels through the one <code class="inline">error()</code>
+          method, whose return type is annotated <code class="inline">NoReturn</code> (a typing hint telling
+          <code class="inline">mypy</code> "this function never returns normally, it always raises" — useful because
+          callers like <code class="inline">tokens = ...; name, x_str, y_str = tokens</code> would otherwise need a
+          type-checker-satisfying <code class="inline">else</code> branch after an <code class="inline">if error case: self.error(...)</code>).
+          Because <code class="inline">self.line_number</code> was already updated by the <code class="inline">for</code>
+          loop in <code class="inline">parse()</code>, every <code class="inline">MapParseError</code> automatically
+          carries the correct line number without threading it through every function signature.
+        </p>
+      </section>
+    </div>
+
+    <!-- ================================================================ -->
+    <div class="step" id="step-3">
+      <div class="step-head"><span class="step-num">STEP 03</span><h1 class="step-title">The objects the parser is building: Zone, Connection, Graph</h1></div>
+      <p class="step-file">Files: <code>src/domain.py</code> (Zone, Connection), <code>src/graph.py</code> (Graph)</p>
+
+      <section>
+        <h2>class Zone</h2>
+        <pre>ZONE_ENTRY_COST = {<span class="s">"normal"</span>: 1, <span class="s">"priority"</span>: 1, <span class="s">"restricted"</span>: 2}
+
+<span class="k">class</span> Zone:
+    <span class="k">def</span> __init__(self, name, x, y, zone_type=<span class="s">"normal"</span>, color=<span class="k">None</span>, max_drones=1) -> <span class="k">None</span>:
+        self.name, self.x, self.y = name, x, y
+        self.zone_type = zone_type
+        self.color = color
+        self.max_drones = max_drones
+        self.occupants: set[int] = set()
+        self.is_start = <span class="k">False</span>
+        self.is_end = <span class="k">False</span>
+
+    <span class="k">@property</span>
+    <span class="k">def</span> is_blocked(self) -> bool: <span class="k">return</span> self.zone_type == <span class="s">"blocked"</span>
+    <span class="k">@property</span>
+    <span class="k">def</span> is_restricted(self) -> bool: <span class="k">return</span> self.zone_type == <span class="s">"restricted"</span>
+    <span class="k">@property</span>
+    <span class="k">def</span> is_priority(self) -> bool: <span class="k">return</span> self.zone_type == <span class="s">"priority"</span>
+
+    <span class="k">def</span> entry_cost(self) -> int | <span class="k">None</span>:
+        <span class="k">if</span> self.is_blocked: <span class="k">return</span> <span class="k">None</span>
+        <span class="k">return</span> ZONE_ENTRY_COST[self.zone_type]
+
+    <span class="k">def</span> has_space(self, n: int = 1) -> bool:
+        <span class="k">if</span> self.max_drones <span class="k">is</span> <span class="k">None</span>: <span class="k">return</span> <span class="k">True</span>
+        <span class="k">return</span> len(self.occupants) + n &lt;= self.max_drones
+
+    <span class="k">def</span> add_occupant(self, drone_id): self.occupants.add(drone_id)
+    <span class="k">def</span> remove_occupant(self, drone_id): self.occupants.discard(drone_id)</pre>
+        <p>
+          <code class="inline">occupants</code> is a live <code class="inline">set[int]</code> of drone IDs — a
+          <code class="inline">set</code> because membership/insert/remove are all O(1) and a drone can never occupy
+          the same zone twice. <code class="inline">@property</code> turns a method into something read like an
+          attribute (<code class="inline">zone.is_restricted</code>, no parentheses) while still computing it fresh
+          from <code class="inline">zone_type</code> every time — no separate boolean fields to keep in sync.
+          <code class="inline">entry_cost()</code> is the single source of truth for "1 turn / 2 turns / impossible"
+          used identically by both <code class="inline">PathFinder</code> (Step 05, to weight edges) and
+          <code class="inline">Simulator</code> (Step 08, to know if a destination is a restricted 2-turn commitment).
+          <code class="inline">has_space(n=1)</code> treats <code class="inline">max_drones is None</code> as
+          "unlimited" — the sentinel value the parser forces onto start/end hubs.
+        </p>
+      </section>
+
+      <section>
+        <h2>class Connection</h2>
+        <pre><span class="k">class</span> Connection:
+    <span class="k">def</span> __init__(self, zone_a: Zone, zone_b: Zone, max_link_capacity: int = 1) -> <span class="k">None</span>:
+        self.zone_a, self.zone_b = zone_a, zone_b
+        self.max_link_capacity = max_link_capacity
+        self.in_transit: set[int] = set()
+
+    <span class="k">@property</span>
+    <span class="k">def</span> name(self) -> str: <span class="k">return</span> f<span class="s">"{self.zone_a.name}-{self.zone_b.name}"</span>
+
+    <span class="k">def</span> other_end(self, zone: Zone) -> Zone:
+        <span class="k">if</span> zone <span class="k">is</span> self.zone_a: <span class="k">return</span> self.zone_b
+        <span class="k">if</span> zone <span class="k">is</span> self.zone_b: <span class="k">return</span> self.zone_a
+        <span class="k">raise</span> ValueError(...)
+
+    <span class="k">def</span> connects(self, name_a: str, name_b: str) -> bool:
+        <span class="k">return</span> {self.zone_a.name, self.zone_b.name} == {name_a, name_b}
+
+    <span class="k">def</span> has_space(self, n: int = 1) -> bool:
+        <span class="k">return</span> len(self.in_transit) + n &lt;= self.max_link_capacity
+
+    <span class="k">def</span> enter(self, drone_id): self.in_transit.add(drone_id)
+    <span class="k">def</span> leave(self, drone_id): self.in_transit.discard(drone_id)</pre>
+        <p>
+          <code class="inline">other_end(zone)</code> uses <code class="inline">is</code> (object identity, not
+          <code class="inline">==</code> equality) since <code class="inline">zone_a</code>/<code class="inline">zone_b</code>
+          are the exact same <code class="inline">Zone</code> instances stored in <code class="inline">Graph.zones</code> —
+          this is the pattern that lets <code class="inline">Graph.neighbors()</code> (below) turn "which connections
+          touch this zone" into "walk to the other end" with zero extra lookups. <code class="inline">in_transit</code>
+          tracks drones currently mid-corridor on a restricted 2-turn move (Step 08).
+        </p>
+      </section>
+
+      <section>
+        <h2>class Graph</h2>
+        <pre><span class="k">class</span> Graph:
+    <span class="k">def</span> __init__(self) -> <span class="k">None</span>:
+        self.zones: dict[str, Zone] = {}
+        self.connections: list[Connection] = []
+        self._adjacency: dict[str, list[Connection]] = {}
+        self._start: Zone | <span class="k">None</span> = <span class="k">None</span>
+        self._end: Zone | <span class="k">None</span> = <span class="k">None</span>
+
+    <span class="k">@property</span>
+    <span class="k">def</span> start(self) -> Zone | <span class="k">None</span>: <span class="k">return</span> self._start
+
+    <span class="k">@start.setter</span>
+    <span class="k">def</span> start(self, zone: Zone) -> <span class="k">None</span>:
+        <span class="k">if</span> self._start <span class="k">is</span> <span class="k">not</span> <span class="k">None</span>: self._start.is_start = <span class="k">False</span>
+        self._start = zone
+        zone.is_start = <span class="k">True</span>
+
+    <span class="c"># .end setter is identical, plus: raises GraphError if zone.zone_type == "blocked"</span>
+
+    <span class="k">def</span> add_zone(self, zone: Zone) -> <span class="k">None</span>:
+        self.zones[zone.name] = zone
+        self._adjacency.setdefault(zone.name, [])
+
+    <span class="k">def</span> add_connection(self, connection: Connection) -> <span class="k">None</span>:
+        self.connections.append(connection)
+        self._adjacency.setdefault(connection.zone_a.name, []).append(connection)
+        self._adjacency.setdefault(connection.zone_b.name, []).append(connection)
+
+    <span class="k">def</span> neighbors(self, zone_name: str) -> list[Connection]:
+        <span class="k">if</span> zone_name <span class="k">not in</span> self.zones: <span class="k">raise</span> GraphError(...)
+        <span class="k">return</span> self._adjacency.get(zone_name, [])</pre>
+        <p>
+          <code class="inline">_adjacency: dict[str, list[Connection]]</code> is precisely the "precompute a
+          <code class="inline">dict[name, list[Connection]]</code> once when the graph is built" optimization
+          mentioned in the roadmap — <code class="inline">add_zone</code> seeds an empty list for every zone
+          (<code class="inline">setdefault</code> only inserts if the key is missing, so calling it twice is safe),
+          and <code class="inline">add_connection</code> appends the same <code class="inline">Connection</code>
+          object onto <em>both</em> endpoints' lists. So <code class="inline">neighbors("junction")</code> is a plain
+          O(1) dict lookup returning every <code class="inline">Connection</code> touching that zone — the caller
+          then uses <code class="inline">connection.other_end(zone)</code> to get the actual neighboring
+          <code class="inline">Zone</code>. The <code class="inline">start</code>/<code class="inline">end</code>
+          properties use Python's setter syntax so that <code class="inline">graph.start = zone</code> (plain
+          attribute-assignment syntax) secretly runs validation code and keeps <code class="inline">Zone.is_start</code>
+          in sync automatically — this is why the parser (Step 02) never has to remember to set
+          <code class="inline">is_start</code> itself.
+        </p>
+        <h3><code class="inline">reachable(start_name, end_name)</code></h3>
+        <pre><span class="k">def</span> reachable(self, start_name: str, end_name: str) -> bool:
+    seen = {start_name}
+    stack = [start_name]
+    <span class="k">while</span> stack:
+        name = stack.pop()
+        <span class="k">if</span> name == end_name: <span class="k">return</span> <span class="k">True</span>
+        <span class="k">for</span> connection <span class="k">in</span> self.neighbors(name):
+            other = connection.other_end(self.zones[name])
+            <span class="k">if</span> other.zone_type != <span class="s">"blocked"</span> <span class="k">and</span> other.name <span class="k">not in</span> seen:
+                seen.add(other.name)
+                stack.append(other.name)
+    <span class="k">return</span> <span class="k">False</span></pre>
+        <p>
+          This is a plain iterative DFS using a Python <code class="inline">list</code> as a stack
+          (<code class="inline">.append</code>/<code class="inline">.pop()</code> from the end, both O(1)) — no
+          recursion, so it can't hit Python's recursion limit on a large map. It completely ignores turns and
+          capacity — it's a pure "is there any walkable route at all, skipping blocked zones" check. It's called as
+          a cheap up-front short-circuit at the very top of <code class="inline">PathFinder.find_path</code> (Step 05)
+          so that a genuinely disconnected map fails instantly instead of making the real time-aware Dijkstra search
+          explore uselessly.
+        </p>
+      </section>
+    </div>
+
+    <!-- ================================================================ -->
+    <div class="step" id="step-4">
+      <div class="step-head"><span class="step-num">STEP 04</span><h1 class="step-title">Back in run(): the start/end sanity check</h1></div>
+      <p class="step-file">File: <code>src/orchestrator.py</code></p>
+      <pre>start = graph.start
+end = graph.end
+<span class="k">if</span> start <span class="k">is</span> <span class="k">None</span> <span class="k">or</span> end <span class="k">is</span> <span class="k">None</span>:
+    <span class="k">raise</span> MapParseError(<span class="s">"start or end hub is missing"</span>, 0)</pre>
+      <p>
+        In practice <code class="inline">MapParser.parse()</code> already guarantees a start and end hub exist
+        (it raises if <code class="inline">start_seen</code>/<code class="inline">end_seen</code> are ever
+        <code class="inline">False</code>) — this is a defensive belt-and-suspenders check purely for
+        <code class="inline">mypy</code>'s benefit and for any future caller that might construct a
+        <code class="inline">Graph</code> another way. <code class="inline">graph.start</code>/<code class="inline">graph.end</code>
+        read straight through the <code class="inline">@property</code> getters from Step 03.
+      </p>
+      <div class="box next"><div class="box-title">→ used next</div>
+      <p><code class="inline">start</code> (a real <code class="inline">Zone</code> object) is kept aside to hand to
+      every <code class="inline">Drone</code> in Step 06. <code class="inline">graph</code> itself is handed whole
+      to <code class="inline">PathFinder(graph)</code>, which is where the actual routing intelligence lives.</p></div>
+    </div>
+
+    <!-- ================================================================ -->
+    <div class="step" id="step-5">
+      <div class="step-head"><span class="step-num deep">STEP 05 ★</span><h1 class="step-title">PathFinder — reservation-aware Dijkstra, one drone at a time</h1></div>
+      <p class="step-file">File: <code>src/pathfinder.py</code></p>
+
+      <div class="box imports"><div class="box-title">Imports used in this file</div>
+      <ul>
+        <li><code class="inline">import heapq</code> — Python's built-in binary-heap functions
+          (<code class="inline">heapq.heappush</code>, <code class="inline">heapq.heappop</code>). It's a plain
+          data structure, not a graph library, which is exactly why the roadmap explicitly allows it: "Python's
+          built-in <code class="inline">heapq</code> is allowed — it's a data structure, not a graph library." It
+          operates on an ordinary Python <code class="inline">list</code> and keeps it in "heap order" so the
+          smallest element is always retrievable in O(log n).</li>
+        <li><code class="inline">import math</code> — used only for <code class="inline">math.inf</code>, a
+          floating-point "infinity" sentinel for "no known cost yet."</li>
+        <li><code class="inline">from typing import Optional</code> — <code class="inline">Optional[list[str]]</code>
+          means "a list of strings, or <code class="inline">None</code>" (used for "no path exists").</li>
+        <li><code class="inline">State = tuple[str, int]</code> — a type alias. Throughout this file a "state" is
+          not just a zone name, but a <strong>(zone name, turn number)</strong> pair. This is the single most
+          important design decision in the whole file — explained fully below.</li>
+      </ul></div>
+
+      <section>
+        <h2>Why the search state is <code class="inline">(zone_name, turn)</code>, not just <code class="inline">zone_name</code></h2>
+        <p>
+          A textbook Dijkstra finds the cheapest route through a static graph. But here, <em>the graph's
+          availability changes over time</em>: a zone with <code class="inline">max_drones=1</code> might be free at
+          turn 3 but already reserved by an earlier drone at turn 4. So <code class="inline">PathFinder</code>
+          doesn't search over "zones" — it searches over <strong>(zone, turn)</strong> pairs, called a
+          <em>time-expanded graph</em> in scheduling literature. Arriving at the same zone at two different turns
+          are two entirely different, independently-costed search nodes. This single idea is what makes later drones
+          route <em>around</em> earlier drones instead of just piling into the same shortest path and fighting over
+          capacity in the Simulator.
+        </p>
+      </section>
+
+      <section>
+        <h2><code class="inline">find_path(start_name, end_name)</code> — the algorithm, line by line</h2>
+        <pre><span class="k">def</span> find_path(self, start_name: str, end_name: str) -> Optional[list[str]]:
+    <span class="k">if</span> <span class="k">not</span> self.graph.reachable(start_name, end_name):
+        self._last_schedule = []
+        <span class="k">return</span> <span class="k">None</span>
+
+    start_state = (start_name, 0)
+    distances: dict[State, tuple[int, int]] = {start_state: (0, 0)}
+    parents: dict[State, State | <span class="k">None</span>] = {start_state: <span class="k">None</span>}
+    heap: list[tuple[int, int, int, str, int]] = [(0, 0, 0, start_name, 0)]
+    visited: set[State] = set()
+    counter = 0</pre>
+        <p>
+          The reachability short-circuit from Step 03 runs first. Then the search state is initialized:
+        </p>
+        <ul>
+          <li><code class="inline">start_state = (start_name, 0)</code> — every drone's search begins "at the start
+            zone, at turn 0."</li>
+          <li><code class="inline">distances</code> maps a <code class="inline">State</code> to its best known
+            <code class="inline">(cost, -priority)</code> pair — a 2-tuple, not just a number. Storing
+            <em>negative</em> priority alongside cost means "compare cost first; on a tie, prefer whichever has
+            <em>more</em> priority-zone visits" falls straight out of Python's normal tuple comparison — no custom
+            comparator needed. This is exactly the <code class="inline">(total_cost, -priority_zone_count)</code>
+            tie-break the roadmap describes.</li>
+          <li><code class="inline">parents</code> is the classic Dijkstra "came-from" map: for every state reached,
+            which state did we come from — used afterward to reconstruct the path by walking backwards.</li>
+          <li><code class="inline">heap</code> is the actual priority queue passed to <code class="inline">heapq</code>
+            functions. It's seeded with one 5-tuple: <code class="inline">(cost=0, neg_priority=0, counter=0, name, turn=0)</code>.</li>
+          <li><code class="inline">counter</code> is a strictly-increasing tie-breaker: if two heap entries ever have
+            identical <code class="inline">(cost, neg_priority)</code>, Python's tuple comparison would fall through
+            to comparing the <em>next</em> element — which, without <code class="inline">counter</code>, would be the
+            zone name <code class="inline">str</code>, and (with equal names too) eventually crash trying to compare
+            incomparable types, or at best produce meaningless alphabetical tie-breaking. Putting an always-unique,
+            monotonically increasing integer in the middle of the tuple guarantees every heap entry is fully
+            orderable and ties break in <em>insertion order</em> (stable), never by comparing the tail values.</li>
+        </ul>
+
+        <h3>The main loop</h3>
+        <pre><span class="k">while</span> heap:
+    cost, neg_priority, _, name, turn = heapq.heappop(heap)
+    state = (name, turn)
+    <span class="k">if</span> state <span class="k">in</span> visited:
+        <span class="k">continue</span>
+    visited.add(state)
+
+    <span class="k">if</span> name == end_name:
+        self._last_schedule = self._build_schedule(parents, state)
+        <span class="k">return</span> self._names(self._last_schedule)
+
+    zone = self.graph.get_zone(name)
+    priority = -neg_priority</pre>
+        <p>
+          <code class="inline">heapq.heappop(heap)</code> always returns the smallest tuple in the heap — since
+          <code class="inline">cost</code> is first, this always pops the cheapest not-yet-finalized state, which is
+          the whole Dijkstra guarantee: once popped, that state's cost can never improve. The
+          <code class="inline">if state in visited: continue</code> guard handles "lazy deletion" — rather than
+          removing stale heap entries when a cheaper route to the same state is found later, the code just leaves
+          old entries in the heap and skips them here if that state was already finalized. This is a standard,
+          simple way to use <code class="inline">heapq</code> (which has no efficient "decrease-key" operation)
+          without needing a fancier heap implementation. <strong>The very first time the popped <code class="inline">name</code>
+          equals <code class="inline">end_name</code>, the search stops</strong> — because it's the cheapest state
+          popped so far and Dijkstra guarantees nothing cheaper remains unexplored, this is provably the optimal
+          arrival. <code class="inline">priority = -neg_priority</code> converts back from the negated storage form
+          to a normal positive count for use below.
+        </p>
+
+        <h3>Expanding to real neighbors (advance moves)</h3>
+        <pre><span class="k">for</span> connection <span class="k">in</span> self.graph.neighbors(name):
+    neighbor = connection.other_end(zone)
+    move_cost = neighbor.entry_cost()
+    <span class="k">if</span> move_cost <span class="k">is</span> <span class="k">None</span>:
+        <span class="k">continue</span>                                   <span class="c"># blocked zone: never enterable</span>
+
+    arrival = turn + move_cost
+    <span class="k">if</span> <span class="k">not</span> self._zone_available(neighbor.name, arrival):
+        <span class="k">continue</span>
+    <span class="k">if</span> <span class="k">not</span> self._link_available(connection, name, neighbor.name, turn, arrival):
+        <span class="k">continue</span>
+
+    next_state = (neighbor.name, arrival)
+    next_priority = priority + (1 <span class="k">if</span> neighbor.is_priority <span class="k">else</span> 0)
+    candidate = (arrival, -next_priority)
+    current = distances.get(next_state, (math.inf, 0))
+    <span class="k">if</span> candidate &gt;= current:
+        <span class="k">continue</span>
+
+    distances[next_state] = candidate
+    parents[next_state] = state
+    counter += 1
+    heapq.heappush(heap, (arrival, -next_priority, counter, neighbor.name, arrival))</pre>
+        <p>For each connection touching the current zone:</p>
+        <ol>
+          <li><code class="inline">connection.other_end(zone)</code> gets the actual neighboring
+            <code class="inline">Zone</code> object (Step 03).</li>
+          <li><code class="inline">move_cost = neighbor.entry_cost()</code> — <code class="inline">1</code> for
+            normal/priority, <code class="inline">2</code> for restricted, or <code class="inline">None</code> for
+            blocked. A <code class="inline">None</code> immediately <code class="inline">continue</code>s to the
+            next connection — blocked zones are structurally impossible to route into, not just discouraged.</li>
+          <li><code class="inline">arrival = turn + move_cost</code> — the turn number the drone would land on the
+            neighbor if it left <em>right now</em>.</li>
+          <li><code class="inline">_zone_available(neighbor.name, arrival)</code> — <strong>this is the
+            reservation check</strong> (full mechanics below): does the destination zone still have a free slot at
+            that specific arrival turn, given every path already reserved by earlier drones?</li>
+          <li><code class="inline">_link_available(...)</code> — the equivalent check for the connection's own
+            capacity across every turn the transit would occupy it (important for the 2-turn restricted case, where
+            the connection is "in use" for two consecutive turns, not one).</li>
+          <li>If both checks pass, compute the candidate cost as <code class="inline">(arrival, -next_priority)</code>
+            and compare it against the best cost known so far for that exact <code class="inline">(neighbor, arrival)</code>
+            state — <code class="inline">distances.get(next_state, (math.inf, 0))</code> defaults to "infinitely bad"
+            if never seen. <strong>Relaxation only happens on strict improvement</strong>
+            (<code class="inline">if candidate >= current: continue</code> skips otherwise) — standard Dijkstra
+            relaxation, just over 2-part tuple costs instead of a single number.</li>
+          <li>On improvement: record the new best cost, record the parent link for path reconstruction, and push a
+            fresh 5-tuple onto the heap with a new unique <code class="inline">counter</code> value.</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Waiting: the move the roadmap calls "a valid, deliberate wait"</h2>
+        <pre>wait_state = (name, turn + 1)
+wait_key = (turn + 1, -priority)
+current = distances.get(wait_state, (math.inf, 0))
+<span class="k">if</span> wait_key &lt; current <span class="k">and</span> turn &lt; self._wait_limit():
+    distances[wait_state] = wait_key
+    parents[wait_state] = state
+    counter += 1
+    heapq.heappush(heap, (turn + 1, -priority, counter, name, turn + 1))</pre>
+        <p>
+          After trying every real neighbor, the loop also considers <strong>staying in the same zone for one more
+          turn</strong> — a self-loop in the time-expanded graph from <code class="inline">(name, turn)</code> to
+          <code class="inline">(name, turn+1)</code> at cost 1. This is what lets the algorithm express "the fastest
+          real route is blocked by another drone's reservation right now, but will be free if I just wait one turn"
+          — without waiting-as-a-move, a temporarily-reserved bottleneck would look like a dead end instead of a
+          short delay. <code class="inline">turn < self._wait_limit()</code> caps how long the search is willing to
+          sit still, which brings us to:
+        </p>
+        <pre><span class="k">def</span> _wait_limit(self) -> int:
+    <span class="k">return</span> max(100, len(self.graph.zones) * 20)</pre>
+        <p>
+          A generous, size-scaled cap (at least 100 turns, or 20 per zone on larger maps) that exists purely to
+          guarantee termination: without <em>some</em> bound, a pathologically over-reserved map could make the
+          search explore an unbounded number of "just wait one more turn" states. It's set high enough that it never
+          meaningfully constrains a solvable map, only guards against infinite search.
+        </p>
+        <div class="box why"><div class="box-title">Why this is Dijkstra and not BFS</div>
+        <p>BFS finds the route with the <em>fewest edges</em>. Here, edges have different costs (1 for normal/priority,
+        2 for restricted) and the search must minimize <em>total turns</em>, not hop count — a 3-hop
+        all-normal route and a 2-hop route through one restricted zone can tie or lose depending on the numbers.
+        That's a weighted-shortest-path problem, which is what a priority queue + relaxation (Dijkstra) solves, and
+        exactly what <code class="inline">heapq</code> is doing here instead of a plain FIFO queue.</p></div>
+      </section>
+
+      <section>
+        <h2>The reservation system — how "multiple drones, multiple paths" actually works</h2>
+        <pre><span class="k">def</span> __init__(self, graph: Graph) -> <span class="k">None</span>:
+    self.graph = graph
+    self.zone_reservations: dict[tuple[str, int], int] = {}
+    self.link_reservations: dict[tuple[str, str, int], int] = {}
+    self._last_schedule: list[State] = []</pre>
+        <p>
+          Two dictionaries carry state <em>across multiple calls</em> to <code class="inline">find_path</code> — this
+          is what lets drone #2's search "see" drone #1's already-committed route:
+        </p>
+        <ul>
+          <li><code class="inline">zone_reservations[(zone_name, turn)] = count</code> — how many drones are
+            already scheduled to be occupying that zone at that exact turn.</li>
+          <li><code class="inline">link_reservations[(z1, z2, turn)] = count</code> — how many drones are already
+            scheduled to be transiting that connection during that turn (keys are always stored with
+            <code class="inline">z1, z2 = sorted((a, b))</code> so <code class="inline">"a","b"</code> and
+            <code class="inline">"b","a"</code> hash to the same key — the connection is bidirectional).</li>
+        </ul>
+        <pre><span class="k">def</span> _zone_available(self, name: str, turn: int) -> bool:
+    zone = self.graph.get_zone(name)
+    <span class="k">if</span> zone.is_end <span class="k">or</span> zone.max_drones <span class="k">is</span> <span class="k">None</span>:
+        <span class="k">return</span> <span class="k">True</span>
+    <span class="k">return</span> self.zone_reservations.get((name, turn), 0) &lt; zone.max_drones
+
+<span class="k">def</span> _link_available(self, connection, current_name, next_name, start_turn, end_turn) -> bool:
+    z1, z2 = sorted((current_name, next_name))
+    capacity = connection.max_link_capacity
+    <span class="k">for</span> turn <span class="k">in</span> range(start_turn, end_turn):
+        used = self.link_reservations.get((z1, z2, turn), 0)
+        <span class="k">if</span> used &gt;= capacity:
+            <span class="k">return</span> <span class="k">False</span>
+    <span class="k">return</span> <span class="k">True</span></pre>
+        <p>
+          <code class="inline">_zone_available</code> treats the end hub (and any zone with
+          <code class="inline">max_drones is None</code>, i.e. the start hub) as always available — matching the
+          "unlimited occupancy on start/end" rule. <code class="inline">_link_available</code> loops over
+          <code class="inline">range(start_turn, end_turn)</code> — for a normal 1-turn move that's a single turn,
+          but for a restricted 2-turn move it checks <em>both</em> turns the drone would physically be mid-corridor,
+          correctly modeling that a restricted transit occupies the connection for its whole duration, not just its
+          arrival instant.
+        </p>
+
+        <h3><code class="inline">find_paths(nb_drones)</code> and <code class="inline">get_drones_paths</code> — the loop that creates the multi-drone effect</h3>
+        <pre><span class="k">def</span> find_paths(self, nb_drones: int) -> list[list[str]]:
+    paths: list[list[str]] = []
+    <span class="k">if</span> self.graph.start <span class="k">is</span> <span class="k">None</span> <span class="k">or</span> self.graph.end <span class="k">is</span> <span class="k">None</span>:
+        <span class="k">return</span> paths
+    <span class="k">for</span> _ <span class="k">in</span> range(nb_drones):
+        path = self.find_path(self.graph.start.name, self.graph.end.name)
+        <span class="k">if</span> path <span class="k">is</span> <span class="k">None</span>:
+            <span class="k">break</span>
+        paths.append(path)
+        self._reserve_schedule(self._last_schedule)
+    <span class="k">return</span> paths
+
+<span class="k">def</span> get_drones_paths(self, nb_drones: int) -> list[list[str]]:
+    <span class="k">return</span> self.find_paths(nb_drones)</pre>
+        <p>
+          This is the actual multi-path mechanism, and it is beautifully simple: <strong>run the exact same
+          single-drone Dijkstra, once per drone, in a plain <code class="inline">for</code> loop</strong> — but after
+          each drone's path is found, immediately call <code class="inline">self._reserve_schedule(self._last_schedule)</code>
+          to permanently record that route's timing into <code class="inline">zone_reservations</code>/
+          <code class="inline">link_reservations</code> <em>before</em> the next iteration's search even starts.
+          Drone 1's search sees an empty reservation table and gets the purely-optimal route. Drone 2's search now
+          sees drone 1's reservations as "occupied" at those exact turns via <code class="inline">_zone_available</code>/
+          <code class="inline">_link_available</code>, and Dijkstra naturally routes around them — either via a
+          different physical path, or by waiting a turn, whichever is cheaper. This repeats for every drone. If at
+          any point <code class="inline">find_path</code> returns <code class="inline">None</code> (map too
+          constrained, or genuinely disconnected), the loop <code class="inline">break</code>s early and returns
+          however many paths it managed — which is exactly why <code class="inline">orchestrator.run()</code> checks
+          <code class="inline">if len(paths) != nb_drones:</code> and bails out with an error message rather than
+          silently under-provisioning drones.
+        </p>
+        <div class="box why"><div class="box-title">Why this still allows the Simulator to do useful work</div>
+        <p>The reservations here are the <em>pathfinder's own predicted schedule</em>, computed by walking each path
+        at its ideal, uncontended timing (<code class="inline">_schedule</code>, below). The real
+        <code class="inline">Simulator</code> (Step 08) doesn't trust these turn numbers blindly — it re-resolves
+        capacity live, turn by turn, because reality can still diverge (e.g. a drone slightly delayed by the
+        FIFO tie-break in <code class="inline">_resolve_moves</code>). What the reservation table guarantees is that
+        the <em>routes</em> chosen for different drones are spread out and capacity-aware from the start, so the
+        Simulator mostly just has to execute a already-sensible plan rather than untangle everyone converging on the
+        same single shortest path.</p></div>
+
+        <h3><code class="inline">_reserve_schedule(schedule)</code> — writing the reservations</h3>
+        <pre><span class="k">def</span> _reserve_schedule(self, schedule: list[State]) -> <span class="k">None</span>:
+    <span class="k">for</span> index, (name, turn) <span class="k">in</span> enumerate(schedule):
+        zone = self.graph.get_zone(name)
+        <span class="k">if</span> <span class="k">not</span> zone.is_start <span class="k">and</span> <span class="k">not</span> zone.is_end:
+            key = (name, turn)
+            self.zone_reservations[key] = self.zone_reservations.get(key, 0) + 1
+
+        <span class="k">if</span> index + 1 &gt;= len(schedule):
+            <span class="k">continue</span>
+        next_name, next_turn = schedule[index + 1]
+        <span class="k">if</span> name == next_name:
+            <span class="k">continue</span>                                       <span class="c"># a "wait" state — no link to reserve</span>
+        z1, z2 = sorted((name, next_name))
+        <span class="k">for</span> current_turn <span class="k">in</span> range(turn, next_turn):
+            key = (z1, z2, current_turn)
+            self.link_reservations[key] = self.link_reservations.get(key, 0) + 1</pre>
+        <p>
+          <code class="inline">schedule</code> here is the raw <code class="inline">list[State]</code> — i.e. every
+          <code class="inline">(zone, turn)</code> pair visited, <em>including</em> repeated zone names from "wait"
+          states (unlike the deduplicated name-only path returned to the caller). Walking it with
+          <code class="inline">enumerate</code> lets each step look at both "here" and "next" to know exactly which
+          turn-slot to reserve. Start/end hubs are deliberately <strong>never</strong> reserved
+          (<code class="inline">if not zone.is_start and not zone.is_end</code>) since they have unlimited capacity —
+          reserving them would be wasted bookkeeping. When <code class="inline">name == next_name</code> (a wait),
+          there's no connection to reserve, only the zone reservation already handled above. Otherwise, the
+          connection is reserved across every turn from departure to arrival — again correctly spanning 2 turns for
+          a restricted move.
+        </p>
+
+        <h3>Path reconstruction: <code class="inline">_build_schedule</code> and <code class="inline">_names</code></h3>
+        <pre><span class="k">def</span> _build_schedule(self, parents, state) -> list[State]:
+    schedule: list[State] = []
+    current: State | <span class="k">None</span> = state
+    <span class="k">while</span> current <span class="k">is</span> <span class="k">not</span> <span class="k">None</span>:
+        schedule.append(current)
+        current = parents[current]
+    schedule.reverse()
+    <span class="k">return</span> schedule
+
+<span class="k">def</span> _names(self, schedule: list[State]) -> list[str]:
+    names: list[str] = []
+    <span class="k">for</span> name, _ <span class="k">in</span> schedule:
+        <span class="k">if</span> <span class="k">not</span> names <span class="k">or</span> names[-1] != name:
+            names.append(name)
+    <span class="k">return</span> names</pre>
+        <p>
+          <code class="inline">_build_schedule</code> walks the <code class="inline">parents</code> back-pointer map
+          from the goal state all the way back to <code class="inline">None</code> (the start state's parent),
+          collecting every state along the way, then <code class="inline">.reverse()</code>s the list in place so it
+          reads start-to-goal. This full, turn-stamped schedule (including repeated "wait" entries) is stored on
+          <code class="inline">self._last_schedule</code> so <code class="inline">find_paths</code> can feed it
+          straight into <code class="inline">_reserve_schedule</code> without recomputing anything.
+          <code class="inline">_names</code> then collapses that into the plain <code class="inline">list[str]</code>
+          of <em>distinct consecutive</em> zone names actually returned by <code class="inline">find_path</code> — a
+          zone visited across several "wait" turns in a row only appears once, since waiting doesn't change the
+          drone's physical zone. This deduplicated list is what the <code class="inline">Drone</code> object (Step 06)
+          and later the <code class="inline">Simulator</code> (Step 08) treat as "the path" — the Simulator
+          re-derives its own turn-by-turn timing live rather than reusing the pathfinder's turn numbers directly.
+        </p>
+        <div class="box next"><div class="box-title">→ return value, all the way back to orchestrator.run()</div>
+        <p><code class="inline">pathfinder.get_drones_paths(nb_drones)</code> ultimately returns
+        <code class="inline">paths: list[list[str]]</code> — one deduplicated zone-name list per drone, in drone order.
+        Back in <code class="inline">run()</code>, this becomes <code class="inline">paths[i - 1]</code> handed to
+        each new <code class="inline">Drone</code> in Step 06.</p></div>
+      </section>
+
+      <section>
+        <h2>One more small method: <code class="inline">reserve(path)</code></h2>
+        <pre><span class="k">def</span> reserve(self, path: list[str]) -> <span class="k">None</span>:
+    schedule = self._schedule(path)
+    self._reserve_schedule(schedule)
+
+<span class="k">def</span> _schedule(self, path: list[str]) -> list[State]:
+    schedule: list[State] = [(path[0], 0)]
+    turn = 0
+    <span class="k">for</span> name <span class="k">in</span> path[1:]:
+        cost = self.graph.get_zone(name).entry_cost() <span class="k">or</span> 1
+        turn += cost
+        schedule.append((name, turn))
+    <span class="k">return</span> schedule</pre>
+        <p>
+          This is a public convenience method not called anywhere in the current pipeline (it isn't invoked from
+          <code class="inline">orchestrator.run()</code>) — it exists so a caller (e.g. a test, or a future feature)
+          can reserve an already-known path without having gone through <code class="inline">find_path</code> first.
+          <code class="inline">_schedule</code> rebuilds a plausible turn-by-turn <code class="inline">State</code>
+          list for an arbitrary path by simply walking it and adding each zone's <code class="inline">entry_cost()</code>
+          (defaulting to <code class="inline">1</code> via <code class="inline">or 1</code> if somehow
+          <code class="inline">None</code>) — assuming no waiting was needed, i.e. the "ideal" timing.
+        </p>
+      </section>
+    </div>
+
+    <!-- ================================================================ -->
+    <div class="step" id="step-6">
+      <div class="step-head"><span class="step-num">STEP 06</span><h1 class="step-title">Building the Drone fleet</h1></div>
+      <p class="step-file">Files: <code>src/orchestrator.py</code> (creation) and <code>src/domain.py</code> (class)</p>
+      <pre>drones = [
+    Drone(i, start, paths[i - 1])
+    <span class="k">for</span> i <span class="k">in</span> range(1, nb_drones + 1)
+]</pre>
+      <p>
+        A list comprehension building <code class="inline">nb_drones</code> objects. <code class="inline">range(1, nb_drones + 1)</code>
+        produces IDs <code class="inline">1, 2, ..., nb_drones</code> (matching the <code class="inline">D1, D2, ...</code>
+        output labels), and <code class="inline">paths[i - 1]</code> converts that 1-based drone ID into the matching
+        0-based index into the <code class="inline">paths</code> list returned by <code class="inline">PathFinder</code>
+        in Step 05 — drone 1 gets <code class="inline">paths[0]</code>, its own dedicated route.
+      </p>
+      <h3>class Drone</h3>
+      <pre><span class="k">class</span> Drone:
+    <span class="k">def</span> __init__(self, drone_id: int, start_zone: Zone, path: list[str]) -> <span class="k">None</span>:
+        self.drone_id = drone_id
+        self.current_zone = start_zone
+        self.path = path
+        self.path_index = 0
+        self.transit_state: TransitState | <span class="k">None</span> = <span class="k">None</span>
+        self.arrived = <span class="k">False</span>
+
+    <span class="k">@property</span>
+    <span class="k">def</span> label(self) -> str: <span class="k">return</span> f<span class="s">"D{self.drone_id}"</span>
+
+    <span class="k">def</span> next_zone_name(self) -> str | <span class="k">None</span>:
+        next_index = self.path_index + 1
+        <span class="k">if</span> next_index &gt;= len(self.path):
+            <span class="k">return</span> <span class="k">None</span>
+        <span class="k">return</span> self.path[next_index]
+
+    <span class="k">def</span> advance(self, zone: Zone) -> <span class="k">None</span>:
+        self.path_index += 1
+        self.current_zone = zone
+        self.transit_state = <span class="k">None</span>
+        <span class="k">if</span> zone.is_end:
+            self.arrived = <span class="k">True</span>
+
+    <span class="k">def</span> begin_transit(self, state: TransitState) -> <span class="k">None</span>:
+        self.transit_state = state
+
+    <span class="k">def</span> has_arrived(self) -> bool:
+        <span class="k">return</span> self.arrived</pre>
+      <p>
+        <code class="inline">path_index</code> always points at the drone's <em>current</em> position within its own
+        <code class="inline">path</code> list; <code class="inline">next_zone_name()</code> just peeks one ahead
+        without mutating anything, returning <code class="inline">None</code> once there's nothing left (drone is
+        already on its last path entry, the end hub). <code class="inline">advance(zone)</code> is the only method
+        that actually moves the drone forward: bump the index, update <code class="inline">current_zone</code>, clear
+        any leftover <code class="inline">transit_state</code>, and flip <code class="inline">arrived = True</code>
+        the moment the new zone is the end hub (<code class="inline">zone.is_end</code>, set by the
+        <code class="inline">Graph.end</code> property in Step 03). All of this is called exclusively from the
+        <code class="inline">Simulator</code> (Step 08) — the <code class="inline">Drone</code> class itself never
+        decides when or whether to move.
+      </p>
+      <pre><span class="k">@dataclass</span>
+<span class="k">class</span> TransitState:
+    connection: Connection
+    destination: Zone
+    arrival_turn: int</pre>
+      <p>
+        <code class="inline">@dataclass</code> (from Python's <code class="inline">dataclasses</code> module) auto-generates
+        <code class="inline">__init__</code>, <code class="inline">__repr__</code> and <code class="inline">__eq__</code>
+        for a class that's really just a labeled bundle of three fields — no behavior of its own. A drone only ever
+        has a non-<code class="inline">None</code> <code class="inline">transit_state</code> while it's physically
+        mid-flight on a committed restricted 2-turn move; it records exactly which
+        <code class="inline">Connection</code> it's occupying, which <code class="inline">Zone</code> it's
+        heading to, and on which turn number it's due to land.
+      </p>
+      <div class="box next"><div class="box-title">→ used next</div>
+      <p>The finished <code class="inline">drones: list[Drone]</code> list, together with <code class="inline">graph</code>,
+      is handed straight to <code class="inline">Simulator(graph, drones)</code> — Step 07.</p></div>
+    </div>
+
+    <!-- ================================================================ -->
+    <div class="step" id="step-7">
+      <div class="step-head"><span class="step-num">STEP 07</span><h1 class="step-title">Simulator(graph, drones).run() — the outer loop</h1></div>
+      <p class="step-file">File: <code>src/simulator.py</code></p>
+      <pre>DEFAULT_MAX_TURNS = 10_000
+
+<span class="k">class</span> SimulationError(Exception): ...
+
+<span class="k">class</span> Simulator:
+    <span class="k">def</span> __init__(self, graph: Graph, drones: list[Drone], max_turns: int = DEFAULT_MAX_TURNS) -> <span class="k">None</span>:
+        self.graph = graph
+        self.drones = drones
+        self.max_turns = max_turns
+        self.turn = 0
+        self.reservations: dict[tuple[str, int], set[int]] = {}
+        self.log: list[str] = []
+        <span class="k">for</span> drone <span class="k">in</span> drones:
+            drone.current_zone.add_occupant(drone.drone_id)
+
+    <span class="k">def</span> run(self) -> list[str]:
+        <span class="k">while</span> <span class="k">not</span> self.is_finished():
+            <span class="k">if</span> self.turn &gt;= self.max_turns:
+                <span class="k">raise</span> SimulationError(f<span class="s">"simulation did not finish within {self.max_turns} turns"</span>)
+            self.step()
+        <span class="k">return</span> self.log
+
+    <span class="k">def</span> is_finished(self) -> bool:
+        <span class="k">return</span> all(drone.has_arrived() <span class="k">for</span> drone <span class="k">in</span> self.drones)</pre>
+      <p>
+        The constructor loop <code class="inline">for drone in drones: drone.current_zone.add_occupant(drone.drone_id)</code>
+        physically places every drone into the start hub's <code class="inline">occupants</code> set before turn 1
+        even begins — matching the mental model "all drones start in one start_hub." <code class="inline">self.reservations</code>
+        is a <em>separate</em> reservation table from <code class="inline">PathFinder</code>'s — this one belongs to
+        the live turn-by-turn engine and only ever holds <strong>next-turn</strong> restricted-zone arrival slots
+        (Step 08). <code class="inline">is_finished()</code> uses the builtin <code class="inline">all(...)</code>
+        over a generator expression — short-circuits as soon as any drone reports
+        <code class="inline">has_arrived() == False</code>, so it doesn't need to check every drone once one blocker
+        is found. <code class="inline">run()</code> is a plain <code class="inline">while</code> loop calling
+        <code class="inline">step()</code> repeatedly, guarded by <code class="inline">max_turns=10_000</code> so a
+        genuinely un-completable schedule (which shouldn't happen given a reachable map, but could in principle from
+        a bug or a pathological map) raises <code class="inline">SimulationError</code> instead of hanging forever —
+        this is the error caught back in <code class="inline">orchestrator.run()</code>'s
+        <code class="inline">except (OSError, SimulationError)</code> branch.
+      </p>
+    </div>
+
+    <!-- ================================================================ -->
+    <div class="step" id="step-8">
+      <div class="step-head"><span class="step-num">STEP 08</span><h1 class="step-title">step() — resolving exactly one turn</h1></div>
+      <p class="step-file">File: <code>src/simulator.py</code></p>
+      <pre><span class="k">def</span> step(self) -> <span class="k">None</span>:
+    self.turn += 1
+    landed = self._process_arrivals()
+    landed_ids = {drone.drone_id <span class="k">for</span> drone, _ <span class="k">in</span> landed}
+    proposals = self._propose_moves(landed_ids)
+    approved = self._resolve_moves(proposals)
+    self.log.append(self._record_turn(landed, approved))</pre>
+      <p>
+        Five sub-steps, executed in this exact order every turn — and the order <em>is</em> the whole scheduling
+        policy, matching the roadmap's "process all departures first, then check capacity for arrivals" and
+        "restricted commitments already in flight land unconditionally" rules.
+      </p>
+
+      <section>
+        <h2>8a. <code class="inline">_process_arrivals()</code> — land anyone due this turn</h2>
+        <pre><span class="k">def</span> _process_arrivals(self) -> list[tuple[Drone, str]]:
+    landed: list[tuple[Drone, str]] = []
+    <span class="k">for</span> drone <span class="k">in</span> self.drones:
+        state = drone.transit_state
+        <span class="k">if</span> state <span class="k">is</span> <span class="k">None</span> <span class="k">or</span> state.arrival_turn != self.turn:
+            <span class="k">continue</span>
+        state.connection.leave(drone.drone_id)
+        self._release(state.destination.name, self.turn, drone.drone_id)
+        state.destination.add_occupant(drone.drone_id)
+        drone.advance(state.destination)
+        landed.append((drone, state.destination.name))
+    <span class="k">return</span> landed</pre>
+        <p>
+          Loops over every drone; skips any drone that isn't mid-transit, or whose reservation was for a different
+          turn. For every drone landing <em>exactly this turn</em>: free its connection slot
+          (<code class="inline">connection.leave</code>), release the reservation table entry that was holding its
+          destination seat (<code class="inline">_release</code>, below), physically add it as an occupant of the
+          destination zone, and call <code class="inline">drone.advance(destination)</code> (Step 06) which updates
+          its position/path index and — if the destination is the end hub — marks it arrived. This lands
+          <strong>unconditionally</strong>: because the slot was already reserved two turns ago when the drone
+          departed (8c below), there's no capacity check to redo here, matching "restricted commitments already in
+          flight land unconditionally (their slot was reserved when they departed)."
+        </p>
+      </section>
+
+      <section>
+        <h2>8b. <code class="inline">_propose_moves(landed_ids)</code> — what would each drone like to do?</h2>
+        <pre><span class="k">def</span> _propose_moves(self, landed_ids: set[int]) -> list[Proposal]:
+    proposals: list[Proposal] = []
+    <span class="k">for</span> drone <span class="k">in</span> self.drones:
+        <span class="k">if</span> drone.has_arrived() <span class="k">or</span> drone.transit_state <span class="k">is</span> <span class="k">not</span> <span class="k">None</span> <span class="k">or</span> drone.drone_id <span class="k">in</span> landed_ids:
+            <span class="k">continue</span>
+        next_name = drone.next_zone_name()
+        <span class="k">if</span> next_name <span class="k">is</span> <span class="k">None</span>:
+            <span class="k">continue</span>
+        destination = self.graph.get_zone(next_name)
+        connection = self.graph.get_connection(drone.current_zone.name, next_name)
+        proposals.append(Proposal(drone, connection, destination))
+    <span class="k">return</span> proposals</pre>
+        <p>
+          Three drone states are explicitly excluded from proposing a new move this turn: already arrived, still
+          mid-transit on an earlier restricted move, or a drone that <em>just</em> landed this very turn (its
+          <code class="inline">drone_id</code> is in the <code class="inline">landed_ids</code> set built in
+          <code class="inline">step()</code>) — a freshly-landed drone waits until <em>next</em> turn before
+          proposing its next hop, which is a natural consequence of processing one action per drone per turn.
+          <code class="inline">Proposal</code> (a small <code class="inline">@dataclass</code> like
+          <code class="inline">TransitState</code>) simply bundles the drone with its desired destination zone and the
+          connection it would travel on — no decision-making happens here yet, only intent-gathering.
+        </p>
+      </section>
+
+      <section>
+        <h2>8c. <code class="inline">_resolve_moves(proposals)</code> — the actual scheduler</h2>
+        <pre><span class="k">def</span> _resolve_moves(self, proposals: list[Proposal]) -> list[ApprovedMove]:
+    <span class="k">for</span> proposal <span class="k">in</span> proposals:
+        proposal.drone.current_zone.remove_occupant(proposal.drone.drone_id)
+
+    approved: list[ApprovedMove] = []
+    ordered = sorted(proposals, key=<span class="k">lambda</span> item: item.drone.drone_id)
+    <span class="k">for</span> proposal <span class="k">in</span> ordered:
+        drone, destination, connection = proposal.drone, proposal.destination, proposal.connection
+        restricted = destination.is_restricted
+
+        space = self._future_space(destination) <span class="k">if</span> restricted <span class="k">else</span> destination.has_space()
+
+        <span class="k">if</span> <span class="k">not</span> (space <span class="k">and</span> connection.has_space()):
+            drone.current_zone.add_occupant(drone.drone_id)
+            <span class="k">continue</span>
+
+        connection.enter(drone.drone_id)
+        <span class="k">if</span> restricted:
+            arrival_turn = self.turn + 1
+            self._reserve(destination.name, arrival_turn, drone.drone_id)
+            drone.begin_transit(TransitState(connection, destination, arrival_turn))
+        <span class="k">else</span>:
+            destination.add_occupant(drone.drone_id)
+            drone.advance(destination)
+            connection.leave(drone.drone_id)
+
+        approved.append(ApprovedMove(drone, connection, destination, restricted))
+    <span class="k">return</span> approved</pre>
+        <p>This is the heart of the whole simulation, so unpacking it fully:</p>
+        <ol>
+          <li><strong>Departures first.</strong> The <em>very first thing</em> that happens — before any capacity
+            check — is every proposing drone is removed from its current zone's <code class="inline">occupants</code>.
+            This is the literal implementation of "departures free up space within the same turn" and "process all
+            departures first, then check capacity for arrivals." A zone with <code class="inline">max_drones=1</code>
+            holding one drone that wants to leave now genuinely has a free slot for a different incoming drone in
+            this same turn.</li>
+          <li><strong>Deterministic ordering.</strong> <code class="inline">sorted(proposals, key=lambda item: item.drone.drone_id)</code>
+            processes proposals in ascending drone-ID order — this is the "FIFO by drone ID" tie-break rule the
+            roadmap flags as "simple, defendable." When two drones compete for the same last free slot, the
+            lower-numbered drone always wins.</li>
+          <li><strong>Capacity check, branching on zone type.</strong> For a <code class="inline">restricted</code>
+            destination, capacity is checked via <code class="inline">_future_space</code> (below) instead of the
+            zone's plain <code class="inline">has_space()</code>, because a restricted move doesn't land this turn —
+            it must reserve a slot for <em>next</em> turn, accounting for anyone else already promised that same
+            slot. For any other zone type, the ordinary <code class="inline">destination.has_space()</code>
+            (Step 03) is enough since the move completes immediately. Either way, the connection itself is also
+            checked with <code class="inline">connection.has_space()</code> — <strong>both</strong> conditions must
+            hold (<code class="inline">if not (space and connection.has_space())</code>).</li>
+          <li><strong>Rejection = wait, not error.</strong> If either check fails, the drone is simply put back into
+            its current zone's occupants (<code class="inline">drone.current_zone.add_occupant(...)</code>, undoing
+            step 1 for this drone only) and the loop <code class="inline">continue</code>s to the next proposal — no
+            exception, no special "waiting" state object is even created; a drone that isn't in
+            <code class="inline">approved</code> this turn implicitly stayed put, which is exactly how
+            <code class="inline">_record_turn</code> (8d) ends up correctly omitting it from the output line. This
+            is the "unresolved proposals simply become wait instead of erroring" deadlock-avoidance design from the
+            roadmap.</li>
+          <li><strong>Approval, branching again on zone type.</strong> If approved: <code class="inline">connection.enter(...)</code>
+            marks it in transit either way. For a <code class="inline">restricted</code> move: compute
+            <code class="inline">arrival_turn = self.turn + 1</code> (always exactly one turn away — the drone
+            departs now, arrives next turn, since restricted costs 2 turns total: this departure turn plus the
+            arrival turn handled by <code class="inline">_process_arrivals</code> next cycle), call
+            <code class="inline">self._reserve(...)</code> to lock that future slot, and call
+            <code class="inline">drone.begin_transit(...)</code> (Step 06) to record the commitment — note the drone
+            is <strong>not</strong> added to the destination's <code class="inline">occupants</code> yet; it's
+            genuinely mid-corridor, not physically in either zone, matching "no mid-corridor waiting, no cancelling."
+            For a normal/priority move: it completes immediately in this same turn —
+            <code class="inline">destination.add_occupant(...)</code>, <code class="inline">drone.advance(...)</code>,
+            and the connection is freed again right away with <code class="inline">connection.leave(...)</code>
+            since a 1-turn hop never actually needs to "hold" the link across a turn boundary.</li>
+          <li>Either way, an <code class="inline">ApprovedMove</code> record is appended, carrying whether it was
+            <code class="inline">restricted</code> — used purely for output formatting next.</li>
+        </ol>
+
+        <h3><code class="inline">_future_space(zone)</code> — the restricted-zone reservation check</h3>
+        <pre><span class="k">def</span> _future_space(self, zone: Zone) -> bool:
+    <span class="k">if</span> zone.max_drones <span class="k">is</span> <span class="k">None</span>:
+        <span class="k">return</span> <span class="k">True</span>
+    reserved = len(self.reservations.get((zone.name, self.turn + 1), set()))
+    <span class="k">return</span> len(zone.occupants) + reserved + 1 &lt;= zone.max_drones</pre>
+        <p>
+          This answers "if I additionally commit one more drone to arrive here next turn, will it still fit?" —
+          it adds together <em>currently physically present</em> occupants, <em>already-promised</em> future
+          arrivals (<code class="inline">reserved</code>, from <code class="inline">self.reservations</code>), and
+          the <code class="inline">+ 1</code> for the drone being considered right now, and compares the sum against
+          <code class="inline">max_drones</code>. This is exactly the "reserve before you commit... confirm the
+          destination slot will be free on arrival turn" rule — checked against the reservation table, not just
+          current occupancy, so two drones can't both depart toward the same single restricted-zone slot in the same
+          turn.
+        </p>
+        <pre><span class="k">def</span> _reserve(self, zone_name: str, turn: int, drone_id: int) -> <span class="k">None</span>:
+    key = (zone_name, turn)
+    self.reservations.setdefault(key, set()).add(drone_id)
+
+<span class="k">def</span> _release(self, zone_name: str, turn: int, drone_id: int) -> <span class="k">None</span>:
+    key = (zone_name, turn)
+    slots = self.reservations.get(key)
+    <span class="k">if</span> slots <span class="k">is</span> <span class="k">None</span>: <span class="k">return</span>
+    slots.discard(drone_id)
+    <span class="k">if</span> <span class="k">not</span> slots:
+        <span class="k">del</span> self.reservations[key]</pre>
+        <p>
+          A reservation is a <code class="inline">set[int]</code> of drone IDs keyed by <code class="inline">(zone, turn)</code> —
+          <code class="inline">setdefault</code> lazily creates the set on first use. <code class="inline">_release</code>
+          (called back in 8a once the drone actually lands) removes it from that set and tidies up the dict entry
+          entirely once empty, so <code class="inline">self.reservations</code> never accumulates stale keys for
+          turns that have already passed.
+        </p>
+      </section>
+
+      <section>
+        <h2>8d. <code class="inline">_record_turn(landed, approved)</code> — building the output line</h2>
+        <pre><span class="k">def</span> _record_turn(self, landed, approved) -> str:
+    tokens: list[tuple[int, str]] = []
+    <span class="k">for</span> drone, zone_name <span class="k">in</span> landed:
+        tokens.append((drone.drone_id, f<span class="s">"{drone.label}-{zone_name}"</span>))
+    <span class="k">for</span> move <span class="k">in</span> approved:
+        target = move.connection.name <span class="k">if</span> move.restricted <span class="k">else</span> move.destination.name
+        tokens.append((move.drone.drone_id, f<span class="s">"{move.drone.label}-{target}"</span>))
+    tokens.sort(key=<span class="k">lambda</span> item: item[0])
+    <span class="k">return</span> <span class="s">" "</span>.join(token <span class="k">for</span> _, token <span class="k">in</span> tokens)</pre>
+        <p>
+          Every drone that either finished landing this turn (from 8a) or had a move approved this turn (from 8c)
+          contributes exactly one token, paired with its <code class="inline">drone_id</code> purely so the final
+          <code class="inline">tokens.sort(...)</code> can order the line by drone number regardless of the order
+          drones happened to be processed in. The token format branches on whether the approved move was
+          <code class="inline">restricted</code>: a normal arrival token is <code class="inline">D&lt;id&gt;-&lt;zone_name&gt;</code>
+          (using <code class="inline">move.destination.name</code>), while a restricted <em>departure</em> token uses
+          <code class="inline">move.connection.name</code> (the <code class="inline">"a-b"</code> string from
+          <code class="inline">Connection.name</code>, Step 03) since the drone hasn't arrived anywhere yet — it's
+          announcing which corridor it just entered. This exactly matches the required output syntax:
+          <code class="inline">D&lt;ID&gt;-&lt;zone&gt;</code> for arrivals, <code class="inline">D&lt;ID&gt;-&lt;connection&gt;</code>
+          for in-flight restricted moves. Drones that neither landed nor got an approved move (i.e. they waited,
+          rejected in 8c, or had nothing left to propose) simply never appear in <code class="inline">tokens</code> —
+          "stationary drones omitted from that turn's line," satisfied for free by only ever adding tokens for
+          actual events.
+        </p>
+        <div class="box next"><div class="box-title">→ return value</div>
+        <p>The joined string (one line, or an empty string if literally nothing moved that turn — which can happen
+        if every drone is waiting) is appended to <code class="inline">self.log</code>. Once
+        <code class="inline">is_finished()</code> finally becomes true, <code class="inline">run()</code> returns
+        the complete <code class="inline">log: list[str]</code> back to <code class="inline">orchestrator.run()</code>.</p></div>
+      </section>
+    </div>
+
+    <!-- ================================================================ -->
+    <div class="step" id="step-9">
+      <div class="step-head"><span class="step-num">STEP 09</span><h1 class="step-title">Back in run(): printing the result</h1></div>
+      <p class="step-file">File: <code>src/orchestrator.py</code></p>
+      <pre><span class="k">for</span> line <span class="k">in</span> log:
+    print(line)
+<span class="k">if</span> self.args.summary:
+    print(f<span class="s">"Total turns: {len(log)}"</span>)
+<span class="k">if</span> self.args.visual:
+    show_simulation(graph, log)
+<span class="k">return</span> 0</pre>
+      <p>
+        Each turn's line is printed as-is, in order — this satisfies "one line per turn" directly, since
+        <code class="inline">log</code> is already built in turn order by <code class="inline">Simulator.step()</code>.
+        <code class="inline">--summary</code> just adds <code class="inline">len(log)</code> — the number of turns is
+        literally the number of lines the simulator produced, since exactly one line is appended per
+        <code class="inline">step()</code> call regardless of whether anything moved that turn.
+        <code class="inline">--visual</code> is the only branch that leads anywhere else: it calls
+        <code class="inline">show_simulation(graph, log)</code> — Step 10.
+      </p>
+    </div>
+
+    <!-- ================================================================ -->
+    <div class="step" id="step-10">
+      <div class="step-head"><span class="step-num deep">STEP 10 ★</span><h1 class="step-title">Visualizer — replaying the log as an animated Arcade window</h1></div>
+      <p class="step-file">File: <code>src/visualizer.py</code> — only ever reached if <code>--visual</code> was passed</p>
+
+      <div class="box imports"><div class="box-title">Imports used in this file</div>
+      <ul>
+        <li><code class="inline">import math</code> — trigonometry (<code class="inline">math.cos</code>,
+          <code class="inline">math.sin</code>, <code class="inline">math.pi</code>, <code class="inline">math.degrees</code>)
+          for placing points on polygons.</li>
+        <li><code class="inline">import arcade</code> — a third-party 2D game/graphics library (listed in
+          <code class="inline">requirements.txt</code> as <code class="inline">arcade&gt;=3.0,&lt;4.0</code>). It
+          gives you: a windowing system (<code class="inline">arcade.Window</code>, which opens an actual OS window
+          and drives a game loop), drawing primitives (<code class="inline">arcade.draw_line</code>,
+          <code class="inline">draw_polygon_filled</code>, <code class="inline">draw_polygon_outline</code>,
+          <code class="inline">draw_circle_filled</code>, <code class="inline">draw_circle_outline</code>), text
+          rendering (<code class="inline">arcade.Text</code>), and keyboard-constant names
+          (<code class="inline">arcade.key.LEFT</code>, <code class="inline">arcade.key.SPACE</code>, etc.). It is
+          <em>not</em> a graph library — it draws pixels, it has no idea what a "zone" or "connection" is — so using
+          it doesn't violate the "no external graph library" constraint.</li>
+        <li><code class="inline">from graph import Graph</code> — the visualizer only needs read access to the same
+          <code class="inline">Graph</code> object built all the way back in Step 03, for zone positions/colors.</li>
+      </ul></div>
+
+      <section>
+        <h2>The subclassing pattern: <code class="inline">class Visualizer(arcade.Window)</code></h2>
+        <p>
+          Arcade works by <strong>inheritance</strong>: you subclass <code class="inline">arcade.Window</code> and
+          override its lifecycle methods; Arcade's internal game loop calls them automatically once you call
+          <code class="inline">arcade.run()</code>. The methods this file overrides, and when Arcade calls each one:
+        </p>
+        <table>
+          <tr><th>Method</th><th>Called by Arcade...</th></tr>
+          <tr><td><code>on_update(dt)</code></td><td>every frame, before drawing — <code>dt</code> is the real
+            seconds elapsed since the last frame. This is where all animation state changes.</td></tr>
+          <tr><td><code>on_draw()</code></td><td>every frame, after update — this is where all drawing calls go.
+            Nothing here should mutate state.</td></tr>
+          <tr><td><code>on_key_press(key, modifiers)</code> / <code>on_key_release(...)</code></td>
+            <td>once per actual key event, asynchronously to the frame loop.</td></tr>
+          <tr><td><code>on_resize(width, height)</code></td><td>whenever the OS window is resized (the window was
+            created <code>resizable=True</code>).</td></tr>
+        </table>
+      </section>
+
+      <section>
+        <h2><code class="inline">__init__</code> — everything set up before the first frame</h2>
+        <pre><span class="k">def</span> __init__(self, graph: Graph, log: list[str]) -> <span class="k">None</span>:
+    super().__init__(WIDTH, HEIGHT, <span class="s">"Fly-In"</span>, resizable=<span class="k">True</span>)
+    arcade.set_background_color(BG)
+    self.graph = graph
+    self.log = log
+    self.zoom, self.origin = self._fit()
+    self.cam = [0.0, 0.0]
+    self.keys_held: set[int] = set()
+
+    self.turn = 0
+    self.timer = 0.0
+    self.holding = <span class="k">False</span>
+    self.paused = <span class="k">False</span>
+
+    self.zone_of = self._start_positions()
+    self.pos = {d: self._layout(z) <span class="k">for</span> d, z <span class="k">in</span> self.zone_of.items()}
+    self.moves: dict[int, tuple[tuple[float, float], tuple[float, float], str | <span class="k">None</span>]] = {}
+    self.midway: set[int] = set()
+    self.edge_of: dict[int, tuple[str, str]] = {}
+    self.zone_r = 20
+    self.labels = _TextPool()
+    self._zone_number = {name: i <span class="k">for</span> i, name <span class="k">in</span> enumerate(self.graph.zones, 1)}</pre>
+        <p>
+          <code class="inline">super().__init__(WIDTH, HEIGHT, "Fly-In", resizable=True)</code> hands control to
+          <code class="inline">arcade.Window.__init__</code>, which actually creates the OS window at
+          <code class="inline">1400×750</code>. Every piece of state the animation needs lives on
+          <code class="inline">self</code> from here on:
+        </p>
+        <ul>
+          <li><code class="inline">self.zoom, self.origin = self._fit()</code> — computed once up front (see below):
+            how to scale the map's raw <code class="inline">(x, y)</code> zone coordinates to fill the window.</li>
+          <li><code class="inline">self.cam = [0.0, 0.0]</code> — a mutable 2-element list representing the current
+            camera pan offset, changed by arrow keys.</li>
+          <li><code class="inline">self.turn = 0</code> — which line of <code class="inline">log</code> is currently
+            being animated (distinct from <code class="inline">Simulator.turn</code> — this is purely a replay
+            cursor).</li>
+          <li><code class="inline">self.timer</code>, <code class="inline">self.holding</code> — the small state
+            machine described in <code class="inline">on_update</code> below: how far into the current
+            move/hold animation phase we are.</li>
+          <li><code class="inline">self.zone_of = self._start_positions()</code> — a <code class="inline">dict[int, str]</code>
+            mapping every drone ID to the zone name it is currently (logically) parked at; see below.</li>
+          <li><code class="inline">self.pos = {d: self._layout(z) for d, z in self.zone_of.items()}</code> — a dict
+            comprehension converting that logical zone-name mapping into actual screen-space
+            <code class="inline">(x, y)</code> floats for every drone, using <code class="inline">_layout</code>
+            (below).</li>
+          <li><code class="inline">self.moves</code> — while a turn is animating, maps drone ID to
+            <code class="inline">(start_xy, end_xy, target_or_None)</code> — the interpolation endpoints for this
+            turn's movement, built by <code class="inline">_start_turn</code>.</li>
+          <li><code class="inline">self.midway</code> / <code class="inline">self.edge_of</code> — which drones are
+            currently mid-flight on a restricted connection (not a real zone), and which connection each one is on
+            — used to highlight the active edge.</li>
+          <li><code class="inline">self.labels = _TextPool()</code> — a small performance helper, explained in its
+            own section below.</li>
+          <li><code class="inline">self._zone_number</code> — assigns each zone a stable integer 1, 2, 3... in the
+            order it appears in <code class="inline">graph.zones</code> (a regular dict preserves insertion order in
+            Python), used only to alternate whether a zone's name label is drawn above or below it.</li>
+        </ul>
+
+        <h3>Coordinate pipeline: <code class="inline">_fit()</code>, <code class="inline">_layout()</code>, <code class="inline">_place()</code>, <code class="inline">_screen_pos()</code></h3>
+        <pre><span class="k">def</span> _fit(self) -> tuple[tuple[float, float], tuple[float, float]]:
+    zones = list(self.graph.zones.values())
+    xs = [z.x <span class="k">for</span> z <span class="k">in</span> zones] <span class="k">or</span> [0]
+    ys = [z.y <span class="k">for</span> z <span class="k">in</span> zones] <span class="k">or</span> [0]
+    span_x = max(max(xs) - min(xs), 1)
+    span_y = max(max(ys) - min(ys), 1)
+    sx = (self.width - 2 * MARGIN) / span_x
+    sy = (self.height - 2 * MARGIN) / span_y
+    offset = (MARGIN - min(xs) * sx, MARGIN - min(ys) * sy)
+    <span class="k">return</span> (sx, sy), offset
+
+<span class="k">def</span> _layout(self, zone_name: str) -> tuple[float, float]:
+    zone = self.graph.zones[zone_name]
+    sx, sy = self.zoom
+    ox, oy = self.origin
+    <span class="k">return</span> zone.x * sx + ox, zone.y * sy + oy
+
+<span class="k">def</span> _place(self, x: float, y: float) -> tuple[float, float]:
+    <span class="k">return</span> x + self.cam[0], y + self.cam[1]
+
+<span class="k">def</span> _screen_pos(self, zone_name: str) -> tuple[float, float]:
+    <span class="k">return</span> self._place(*self._layout(zone_name))</pre>
+        <p>
+          Four small functions, each adding exactly one transformation, composed together:
+        </p>
+        <ol>
+          <li><code class="inline">_fit()</code> looks at every zone's raw map <code class="inline">x</code>/<code class="inline">y</code>
+            (the coordinates straight from the map file, Step 02), finds the bounding box
+            (<code class="inline">span_x</code>, <code class="inline">span_y</code>, each floored at
+            <code class="inline">1</code> to avoid division by zero on a degenerate single-column/row map), and
+            computes an independent horizontal scale <code class="inline">sx</code> and vertical scale
+            <code class="inline">sy</code> so the whole map's bounding box exactly fills the window minus a
+            <code class="inline">MARGIN</code> of <code class="inline">120</code> pixels on every side. The
+            <code class="inline">offset</code> then shifts everything so the map's minimum
+            <code class="inline">x</code>/<code class="inline">y</code> lands exactly at the margin, not at the
+            literal screen origin. This runs once at startup and again on every window resize.</li>
+          <li><code class="inline">_layout(zone_name)</code> applies that scale+offset to one zone's raw coordinates
+            — this is the zone's position in "world space," ignoring any camera pan.</li>
+          <li><code class="inline">_place(x, y)</code> adds the current <code class="inline">self.cam</code> pan
+            offset — turning world space into actual screen space.</li>
+          <li><code class="inline">_screen_pos(zone_name)</code> is just the composition of the two: raw map
+            coordinate → world layout → panned screen position. This is the function almost everything in
+            <code class="inline">on_draw</code> actually calls.</li>
+        </ol>
+        <div class="box why"><div class="box-title">Why split into 4 functions instead of 1</div>
+        <p>Panning (via arrow keys) changes every frame, but the zoom/fit only changes on resize. Separating "world
+        layout" (stable) from "camera placement" (volatile) means <code class="inline">_layout()</code>'s result for
+        a zone can be reused (e.g. cached in <code class="inline">self.pos</code> for drones sitting still) without
+        recomputing the scale math, while panning only ever adds two numbers in <code class="inline">_place()</code>.</p></div>
+
+        <h3><code class="inline">_start_positions()</code> — where every drone begins the replay</h3>
+        <pre><span class="k">def</span> _start_positions(self) -> dict[int, str]:
+    <span class="k">if</span> self.graph.start <span class="k">is</span> <span class="k">None</span>:
+        <span class="k">return</span> {}
+    highest = 0
+    <span class="k">for</span> line <span class="k">in</span> self.log:
+        <span class="k">for</span> token <span class="k">in</span> line.split():
+            highest = max(highest, int(token[1:].split(<span class="s">"-"</span>, 1)[0]))
+    <span class="k">return</span> {d: self.graph.start.name <span class="k">for</span> d <span class="k">in</span> range(1, highest + 1)}</pre>
+        <p>
+          Notice the visualizer is never told <code class="inline">nb_drones</code> directly — it only receives
+          <code class="inline">graph</code> and the plain text <code class="inline">log</code>. So it re-derives the
+          drone count by scanning <em>every</em> token of <em>every</em> log line: a token looks like
+          <code class="inline">"D3-junction"</code>; <code class="inline">token[1:]</code> strips the leading
+          <code class="inline">"D"</code>, <code class="inline">.split("-", 1)[0]</code> takes everything before the
+          first dash (the numeric ID — this correctly stops before a connection name like
+          <code class="inline">"3-junction-goal"</code> would ever be ambiguous, since IDs never contain a dash),
+          and <code class="inline">int(...)</code> converts it. Tracking the running <code class="inline">max</code>
+          across the whole log gives the highest drone ID ever mentioned, which (since drone IDs are always
+          <code class="inline">1..nb_drones</code>) is exactly <code class="inline">nb_drones</code>. Every drone
+          then starts the replay "parked" at the start hub's name.
+        </p>
+      </section>
+
+      <section>
+        <h2>The animation state machine: <code class="inline">on_update(dt)</code></h2>
+        <pre>MOVE_TIME = 0.6
+HOLD_TIME = 0.9
+
+<span class="k">def</span> on_update(self, dt: float) -> <span class="k">None</span>:
+    <span class="k">for</span> key <span class="k">in</span> self.keys_held:
+        dx, dy = ARROWS[key]
+        self.cam[0] += dx * PAN_SPEED * dt
+        self.cam[1] += dy * PAN_SPEED * dt
+
+    <span class="k">if</span> self.paused <span class="k">or</span> self.turn &gt;= len(self.log):
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="k">not</span> self.moves <span class="k">and</span> <span class="k">not</span> self.holding:
+        self._start_turn()
+    self.timer += dt
+    <span class="k">if</span> <span class="k">not</span> self.holding <span class="k">and</span> self.timer &gt;= MOVE_TIME:
+        self.timer, self.holding = 0.0, <span class="k">True</span>
+    <span class="k">elif</span> self.holding <span class="k">and</span> self.timer &gt;= HOLD_TIME:
+        self._finish_turn()</pre>
+        <p>
+          Called every frame with <code class="inline">dt</code> = real elapsed seconds (typically ~1/60s). First,
+          <strong>camera panning is completely independent of playback</strong> — it applies even while paused:
+          for every key currently held down (tracked in <code class="inline">self.keys_held</code>, populated by
+          <code class="inline">on_key_press</code>/<code class="inline">on_key_release</code> below),
+          <code class="inline">ARROWS[key]</code> looks up a unit direction <code class="inline">(dx, dy)</code> and
+          moves the camera at a constant <code class="inline">PAN_SPEED</code> pixels/second, scaled by
+          <code class="inline">dt</code> so panning speed is frame-rate independent.
+        </p>
+        <p>
+          Then, if paused or the replay has consumed every log line, nothing else happens this frame. Otherwise this
+          is a small two-phase state machine per turn:
+        </p>
+        <ol>
+          <li><strong>Idle → Moving:</strong> if there's no in-progress interpolation (<code class="inline">self.moves</code>
+            is empty) and we're not in the post-move hold, call <code class="inline">_start_turn()</code> to compute
+            this turn's start/end positions for every drone that moves (below).</li>
+          <li><strong>Moving:</strong> accumulate <code class="inline">self.timer</code> every frame; once it reaches
+            <code class="inline">MOVE_TIME</code> (0.6 seconds), snap to the "holding" phase and reset the timer —
+            drones have now visually finished sliding to their destination.</li>
+          <li><strong>Holding:</strong> once the (separately timed) hold reaches <code class="inline">HOLD_TIME</code>
+            (0.9 seconds — a pause so the eye can register the arrival before the next turn starts sliding), call
+            <code class="inline">_finish_turn()</code> to commit positions and advance to the next log line.</li>
+        </ol>
+        <p>
+          So the perceived rhythm per turn is: 0.6s of sliding animation, then 0.9s of static hold, then the next
+          turn's slide begins — entirely independent of how much real simulated time (in "turns") that log line
+          represents.
+        </p>
+
+        <h3><code class="inline">_start_turn()</code> — turning one log line into interpolation targets</h3>
+        <pre><span class="k">def</span> _start_turn(self) -> <span class="k">None</span>:
+    self.moves.clear()
+    <span class="k">for</span> token <span class="k">in</span> self.log[self.turn].split():
+        drone_id = int(token[1:].split(<span class="s">"-"</span>, 1)[0])
+        target = token.split(<span class="s">"-"</span>, 1)[1]
+        start = self.pos[drone_id]
+        <span class="k">if</span> target <span class="k">in</span> self.graph.zones:
+            self.moves[drone_id] = (start, self._layout(target), target)
+            self.midway.discard(drone_id)
+        <span class="k">else</span>:
+            a, b = target.split(<span class="s">"-"</span>, 1)
+            pa, pb = self._layout(a), self._layout(b)
+            mid = ((pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2)
+            self.moves[drone_id] = (start, mid, <span class="k">None</span>)
+            self.midway.add(drone_id)
+            self.edge_of[drone_id] = (a, b)</pre>
+        <p>
+          <code class="inline">self.log[self.turn]</code> is the raw text line for the current turn, e.g.
+          <code class="inline">"D1-roof2 D2-tunnelB"</code>; <code class="inline">.split()</code> breaks it into
+          individual space-separated tokens. For each token, the drone ID is extracted the same way as in
+          <code class="inline">_start_positions</code>, and <code class="inline">target</code> is everything after
+          the first dash — which could be either a plain zone name (a normal arrival) or a
+          <code class="inline">"a-b"</code> connection name (a restricted departure). The code distinguishes the two
+          cases with one clean check: <strong><code class="inline">if target in self.graph.zones</code></strong> —
+          zone names never collide with connection names because connection names always contain a dash and zone
+          names are never allowed to (enforced back in the parser's <code class="inline">"-" in name</code> check,
+          Step 02).
+        </p>
+        <ul>
+          <li><strong>Arrival case:</strong> <code class="inline">self.moves[drone_id] = (start, self._layout(target), target)</code>
+            — animate a straight line from the drone's last known screen position to the target zone's world
+            position, and remember the target name (used by <code class="inline">_finish_turn</code> to update
+            <code class="inline">zone_of</code>). <code class="inline">self.midway.discard(drone_id)</code> ensures a
+            drone that was mid-flight last turn is no longer flagged as such.</li>
+          <li><strong>Restricted-departure case:</strong> the token has no matching zone, so it's split on the dash
+            into its two endpoint zone names <code class="inline">a, b</code>, both endpoints are laid out in world
+            space, and the animation target becomes the literal <strong>midpoint</strong> between them — visually,
+            the drone slides halfway down the corridor and pauses there, rather than jumping straight to a zone it
+            hasn't reached yet. The stored tuple's third element is <code class="inline">None</code> (not a real
+            zone), which is exactly the signal <code class="inline">_finish_turn</code> uses to know "don't update
+            this drone's logical zone, it's still traveling." The drone is added to <code class="inline">self.midway</code>
+            and its edge recorded in <code class="inline">self.edge_of</code> so <code class="inline">_draw_connections</code>
+            can highlight that specific line segment.</li>
+        </ul>
+
+        <h3><code class="inline">_finish_turn()</code> and <code class="inline">_arrived()</code></h3>
+        <pre><span class="k">def</span> _finish_turn(self) -> <span class="k">None</span>:
+    <span class="k">for</span> drone_id, (_, end, target) <span class="k">in</span> self.moves.items():
+        self.pos[drone_id] = end
+        <span class="k">if</span> target <span class="k">is</span> <span class="k">not</span> <span class="k">None</span>:
+            self.zone_of[drone_id] = target
+    self.moves.clear()
+    self.turn += 1
+    self.timer = 0.0
+    self.holding = <span class="k">False</span>
+
+<span class="k">def</span> _arrived(self) -> dict[int, str]:
+    <span class="k">if</span> <span class="k">not</span> self.holding:
+        <span class="k">return</span> {}
+    <span class="k">return</span> {d: t <span class="k">for</span> d, (_, _, t) <span class="k">in</span> self.moves.items() <span class="k">if</span> t <span class="k">is</span> <span class="k">not</span> <span class="k">None</span>}</pre>
+        <p>
+          <code class="inline">_finish_turn</code> commits every animated drone's final screen position into
+          <code class="inline">self.pos</code>, and — only for drones that actually reached a real zone (
+          <code class="inline">target is not None</code>) — updates their logical <code class="inline">zone_of</code>
+          entry too (a mid-flight drone keeps its <em>old</em> <code class="inline">zone_of</code> value, since it
+          hasn't logically arrived anywhere new yet). Then it clears <code class="inline">self.moves</code>,
+          advances the replay cursor <code class="inline">self.turn += 1</code>, and resets the timer/hold flag ready
+          for <code class="inline">on_update</code> to call <code class="inline">_start_turn()</code> again next
+          frame. <code class="inline">_arrived()</code> is a small query used only during the drawing pass (below):
+          while holding (the pause after sliding finishes), which drones just landed in a real zone this turn —
+          used so those drones are drawn merged into the zone's occupant wedge rather than as a separate floating
+          dot on top of it.
+        </p>
+      </section>
+
+      <section>
+        <h2>Keyboard &amp; window handlers</h2>
+        <pre>ARROWS = {
+    arcade.key.LEFT: (-1, 0), arcade.key.RIGHT: (1, 0),
+    arcade.key.UP: (0, 1), arcade.key.DOWN: (0, -1),
+}
+
+<span class="k">def</span> on_key_press(self, key: int, modifiers: int) -> <span class="k">None</span>:
+    <span class="k">if</span> key <span class="k">in</span> ARROWS:
+        self.keys_held.add(key)
+    <span class="k">elif</span> key == arcade.key.SPACE:
+        self.paused = <span class="k">not</span> self.paused
+    <span class="k">elif</span> key == arcade.key.R:
+        self._reset()
+
+<span class="k">def</span> on_key_release(self, key: int, modifiers: int) -> <span class="k">None</span>:
+    self.keys_held.discard(key)
+
+<span class="k">def</span> on_resize(self, width: int, height: int) -> <span class="k">None</span>:
+    super().on_resize(width, height)
+    self.zone_r = ((self.width / (2500 + self.width)) + (self.height / (1500 + self.height))) * 20
+    self.zoom, self.origin = self._fit()</pre>
+        <p>
+          Arrow keys are added to/removed from the <code class="inline">keys_held</code> set rather than moving the
+          camera directly inside the key handler — this is what lets holding an arrow down produce smooth continuous
+          panning (handled every frame in <code class="inline">on_update</code>) instead of one small jump per key
+          event. <code class="inline">SPACE</code> toggles <code class="inline">self.paused</code>.
+          <code class="inline">R</code> calls <code class="inline">_reset()</code> (rewinds
+          <code class="inline">self.turn</code> to 0 and rebuilds <code class="inline">zone_of</code>/<code class="inline">pos</code>
+          from scratch via <code class="inline">_start_positions()</code>, so replay can restart without closing the
+          window). <code class="inline">on_resize</code> must call <code class="inline">super().on_resize(...)</code>
+          first (letting Arcade update its own internal viewport), then recomputes
+          <code class="inline">self.zone_r</code> — the on-screen radius of a zone's polygon — via a hand-tuned
+          formula that grows the radius as the window grows but with diminishing returns (each term is a fraction
+          that approaches 1 as width/height grow, so <code class="inline">zone_r</code> approaches a max around
+          <code class="inline">40</code>, never exploding on a huge window), and finally recomputes
+          <code class="inline">zoom</code>/<code class="inline">origin</code> via <code class="inline">_fit()</code>
+          so the whole map re-fits the new window size.
+        </p>
+      </section>
+
+      <section>
+        <h2>Drawing: <code class="inline">on_draw()</code> and its four passes</h2>
+        <pre><span class="k">def</span> on_draw(self) -> <span class="k">None</span>:
+    self.clear()
+    self._draw_connections()
+    self._draw_zones()
+    self._draw_moving_drones()
+    self._draw_hud()</pre>
+        <p>
+          <code class="inline">self.clear()</code> (inherited from <code class="inline">arcade.Window</code>) wipes the
+          frame to <code class="inline">BG</code>. The four passes are drawn strictly in this order so later passes
+          layer visually on top of earlier ones: background lines first, then the zone polygons on top of the lines,
+          then any drone currently mid-flight (a floating circle) on top of everything, then the HUD text on top of
+          all of it.
+        </p>
+
+        <h3>Pass 1 — <code class="inline">_draw_connections()</code></h3>
+        <pre><span class="k">def</span> _draw_connections(self) -> <span class="k">None</span>:
+    active = {frozenset(self.edge_of[d]) <span class="k">for</span> d <span class="k">in</span> self.midway <span class="k">if</span> d <span class="k">in</span> self.edge_of}
+    <span class="k">for</span> conn <span class="k">in</span> self.graph.connections:
+        a = self._screen_pos(conn.zone_a.name)
+        b = self._screen_pos(conn.zone_b.name)
+        is_active = frozenset((conn.zone_a.name, conn.zone_b.name)) <span class="k">in</span> active
+        color, width = (LINE_ACTIVE, 3) <span class="k">if</span> is_active <span class="k">else</span> (LINE, 2)
+        arcade.draw_line(*a, *b, color, width)</pre>
+        <p>
+          A set comprehension builds <code class="inline">active</code>: the set of connections (as
+          <code class="inline">frozenset</code>s of their two endpoint names, again so direction doesn't matter) that
+          currently have a drone mid-flight on them, drawn from <code class="inline">self.midway</code>/<code class="inline">self.edge_of</code>
+          (populated in <code class="inline">_start_turn</code>). Then every single connection in the graph is drawn
+          as a plain line between its two zones' current screen positions, and simply checking set membership picks
+          a brighter, thicker style (<code class="inline">LINE_ACTIVE</code>, width 3) for edges currently in active
+          use versus the default dim style (<code class="inline">LINE</code>, width 2) for everything else.
+          <code class="inline">arcade.draw_line(*a, *b, color, width)</code> unpacks the <code class="inline">(x, y)</code>
+          tuples with <code class="inline">*</code> so the call becomes <code class="inline">draw_line(ax, ay, bx, by, color, width)</code>,
+          matching Arcade's actual signature.
+        </p>
+
+        <h3>Pass 2 — <code class="inline">_draw_zones()</code> and the n-gon geometry helpers</h3>
+        <pre><span class="k">def</span> _ngon_point(cx, cy, radius, angle, sides, rotation=ROTATION) -> tuple[float, float]:
+    seg = 2 * math.pi / sides
+    local = ((angle - rotation + seg / 2) % seg) - seg / 2
+    r = radius * math.cos(seg / 2) / math.cos(local)
+    <span class="k">return</span> cx + r * math.cos(angle), cy + r * math.sin(angle)
+
+<span class="k">def</span> _ngon_vertices(cx, cy, radius, sides, rotation=ROTATION) -> list[tuple[float, float]]:
+    step = 2 * math.pi / sides
+    <span class="k">return</span> [_ngon_point(cx, cy, radius, rotation + i * step, sides, rotation) <span class="k">for</span> i <span class="k">in</span> range(sides)]</pre>
+        <p>
+          This is genuinely the most mathematically dense part of the file, so it's worth walking through slowly.
+          A regular polygon with <code class="inline">sides</code> sides and "radius" <code class="inline">radius</code>
+          (distance from center to each <em>corner</em>) has corners spaced every
+          <code class="inline">2π / sides</code> radians apart. <code class="inline">_ngon_vertices</code> is the
+          simple case: it just calls <code class="inline">_ngon_point</code> at each of those exact corner angles
+          (<code class="inline">rotation + i * step</code>) to get the hexagon/pentagon's actual corner coordinates —
+          this is what's fed to <code class="inline">arcade.draw_polygon_outline</code>/<code class="inline">draw_polygon_filled</code>.
+        </p>
+        <p>
+          <code class="inline">_ngon_point</code> is more general: it computes a point <em>on the polygon's boundary
+          at an arbitrary angle</em>, not just at a corner — used later by <code class="inline">_draw_occupants</code>
+          to slice a hexagon into uneven pie-wedges at angles that don't line up with its corners. The math: for a
+          regular polygon, the distance from the center to the boundary varies between the "radius" (at a corner)
+          and a slightly smaller value (at the midpoint of an edge) — the classic formula for that distance at
+          angle offset <code class="inline">local</code> from the nearest edge's center is
+          <code class="inline">radius * cos(seg/2) / cos(local)</code>, where <code class="inline">seg</code> is the
+          angular width of one edge. <code class="inline">local = ((angle - rotation + seg/2) % seg) - seg/2</code>
+          folds the requested angle into the range <code class="inline">[-seg/2, seg/2]</code> relative to its
+          nearest edge's center, using Python's modulo operator <code class="inline">%</code> (which always returns a
+          non-negative result for a positive divisor) — this is what makes the formula work identically no matter
+          which of the polygon's edges the angle actually falls on. Once <code class="inline">r</code> (the boundary
+          distance at that exact angle) is known, standard polar-to-Cartesian conversion
+          (<code class="inline">cx + r*cos(angle), cy + r*sin(angle)</code>) gives the final point.
+        </p>
+        <pre><span class="k">def</span> _draw_zones(self) -> <span class="k">None</span>:
+    moving = set(self.moves)
+    arrived = self._arrived()
+    <span class="k">for</span> name, idx <span class="k">in</span> self._zone_number.items():
+        zone = self.graph.zones[name]
+        x, y = self._screen_pos(name)
+        ring = self._zone_color(zone)
+        sides = 5 <span class="k">if</span> (zone.is_start <span class="k">or</span> zone.is_end) <span class="k">else</span> 6
+        arcade.draw_polygon_outline(_ngon_vertices(x, y, self.zone_r + 2, sides), ring, 2)
+
+        occupants = sorted(
+            [d <span class="k">for</span> d, z <span class="k">in</span> self.zone_of.items() <span class="k">if</span> z == name <span class="k">and</span> d <span class="k">not in</span> moving]
+            + [d <span class="k">for</span> d, z <span class="k">in</span> arrived.items() <span class="k">if</span> z == name]
+        )
+        <span class="k">if</span> occupants:
+            self._draw_occupants(x, y, sides, occupants)
+        <span class="k">else</span>:
+            fill = tuple(max(c // 5, 20) <span class="k">for</span> c <span class="k">in</span> ring)
+            arcade.draw_polygon_filled(_ngon_vertices(x, y, self.zone_r, sides), fill)
+            letter = (<span class="s">"S"</span> <span class="k">if</span> zone.is_start <span class="k">else</span> <span class="s">"E"</span> <span class="k">if</span> zone.is_end <span class="k">else</span> zone.zone_type[0].upper())
+            self.labels.draw(f<span class="s">"letter-{name}"</span>, letter, x, y - 8, ring, 16, anchor_x=<span class="s">"center"</span>, bold=<span class="k">True</span>)
+
+        self.labels.draw(f<span class="s">"name-{name}"</span>, name, x, self._name_label_y(y, idx), TEXT, 9, anchor_x=<span class="s">"center"</span>)</pre>
+        <p>
+          For every zone: pick its ring color via <code class="inline">_zone_color</code> (below), pick
+          <code class="inline">5</code> sides for start/end hubs and <code class="inline">6</code> for everything
+          else (visually distinguishing the two special hubs at a glance), and draw the outline slightly larger
+          (<code class="inline">self.zone_r + 2</code>) than the fill so the ring reads as a border. Then it builds
+          the list of drone IDs currently "in" this zone — combining drones logically parked there
+          (<code class="inline">self.zone_of</code>) that <em>aren't</em> currently mid-slide
+          (<code class="inline">d not in moving</code>, where <code class="inline">moving = set(self.moves)</code>)
+          with drones that just froze there this frame during the hold phase (<code class="inline">arrived</code>,
+          from <code class="inline">_arrived()</code>) — <code class="inline">sorted(...)</code> on the combined list
+          both deduplicates concerns about ordering and gives a stable, predictable wedge order. If the zone has any
+          occupants, delegate to <code class="inline">_draw_occupants</code> (below) instead of a plain fill.
+          Otherwise draw a plain dim fill (<code class="inline">fill = tuple(max(c // 5, 20) for c in ring)</code> —
+          each RGB channel of the ring color divided by 5, floored at 20, i.e. a darker tint of the same hue) and a
+          single centered letter identifying the zone: <code class="inline">"S"</code>/<code class="inline">"E"</code>
+          for start/end, or the first letter of its <code class="inline">zone_type</code> (upper-cased) otherwise —
+          <code class="inline">"N"</code>/<code class="inline">"P"</code>/<code class="inline">"R"</code>/<code class="inline">"B"</code>.
+          Finally the zone's plain text name is drawn near it, offset above or below via
+          <code class="inline">_name_label_y</code> (alternating by <code class="inline">idx % 2</code>, purely to
+          reduce label collisions between adjacent zones).
+        </p>
+
+        <h3><code class="inline">_draw_occupants</code> — pie-slicing a zone by drone count</h3>
+        <pre><span class="k">def</span> _draw_occupants(self, x, y, sides, drones: list[int]) -> <span class="k">None</span>:
+    n = len(drones)
+    step = 2 * math.pi / n
+    <span class="k">for</span> i <span class="k">in</span> range(n):
+        a0, a1 = i * step, (i + 1) * step
+        samples = max(2, int(math.degrees(step) / 10))
+        arc = [_ngon_point(x, y, self.zone_r, a0 + (a1 - a0) * k / samples, sides) <span class="k">for</span> k <span class="k">in</span> range(samples + 1)]
+        arcade.draw_polygon_filled([(x, y), *arc], WHITE)
+    <span class="k">for</span> i <span class="k">in</span> range(n <span class="k">if</span> n &gt; 1 <span class="k">else</span> 0):
+        ax, ay = _ngon_point(x, y, self.zone_r, i * step, sides)
+        arcade.draw_line(x, y, ax, ay, BG, 2)
+    <span class="k">if</span> n &lt;= 6:
+        r = self.zone_r * 0.55 <span class="k">if</span> n &gt; 1 <span class="k">else</span> 0
+        <span class="k">for</span> i, drone_id <span class="k">in</span> enumerate(drones):
+            mid = (i + 0.5) * step
+            self.labels.draw(f<span class="s">"d{drone_id}"</span>, f<span class="s">"D{drone_id}"</span>, x + r * math.cos(mid), y + r * math.sin(mid) - 6, BG, 10, anchor_x=<span class="s">"center"</span>, bold=<span class="k">True</span>)</pre>
+        <p>
+          This divides the zone's polygon into <code class="inline">n</code> equal angular wedges, one per occupying
+          drone. <code class="inline">step = 2π / n</code> is each wedge's angular width. For each wedge
+          <code class="inline">i</code>: rather than approximating the polygon's curved-looking boundary segment with
+          a single straight line (which would look faceted for a hexagon sliced into, say, 5 wedges at odd angles),
+          the code samples several points <em>along the polygon's actual boundary</em> between the wedge's start and
+          end angles using <code class="inline">_ngon_point</code> — <code class="inline">samples</code> is chosen
+          adaptively as roughly one sample per 10 degrees of arc (<code class="inline">max(2, ...)</code> guarantees
+          at least a triangle even for a huge wedge), then <code class="inline">arcade.draw_polygon_filled([(x, y), *arc], WHITE)</code>
+          draws a filled fan from the center point through all those boundary samples — a "pie slice" that hugs the
+          hexagon's actual edges rather than cutting a straight chord across them. A second loop draws thin
+          background-colored dividing lines from the center out to each wedge boundary corner, visually separating
+          adjacent wedges. Finally, if there are 6 or fewer occupants (beyond that, individual labels would be
+          illegibly cramped), each wedge gets a centered <code class="inline">"D&lt;id&gt;"</code> label positioned
+          at the wedge's angular midpoint, pulled slightly toward the center
+          (<code class="inline">r = zone_r * 0.55</code>) so it sits inside its own slice rather than at the outer
+          edge.
+        </p>
+
+        <h3>Pass 3 — <code class="inline">_draw_moving_drones()</code></h3>
+        <pre><span class="k">def</span> _draw_moving_drones(self) -> <span class="k">None</span>:
+    arrived = self._arrived()
+    <span class="k">for</span> drone_id <span class="k">in</span> self.moves:
+        <span class="k">if</span> drone_id <span class="k">in</span> arrived:
+            <span class="k">continue</span>
+        x, y = self._drone_screen_pos(drone_id)
+        arcade.draw_circle_filled(x, y, MOVE_R, WHITE)
+        arcade.draw_circle_outline(x, y, MOVE_R + 1, BG, 2)
+        self.labels.draw(f<span class="s">"d{drone_id}"</span>, f<span class="s">"D{drone_id}"</span>, x, y - 5, BG, 9, anchor_x=<span class="s">"center"</span>, bold=<span class="k">True</span>)</pre>
+        <p>
+          Any drone that's currently animating (<code class="inline">in self.moves</code>) but hasn't yet
+          merged into a zone's wedge (<code class="inline">not in arrived</code> — i.e. it's either still sliding, or
+          it's paused at a corridor midpoint) is drawn as a plain floating white circle with its label, using
+          <code class="inline">_drone_screen_pos</code>:
+        </p>
+        <pre><span class="k">def</span> _drone_screen_pos(self, drone_id: int) -> tuple[float, float]:
+    start, end, _ = self.moves[drone_id]
+    t = 1.0 <span class="k">if</span> self.holding <span class="k">else</span> min(self.timer / MOVE_TIME, 1.0)
+    <span class="k">return</span> self._place(start[0] + (end[0]-start[0]) * t, start[1] + (end[1]-start[1]) * t)</pre>
+        <p>
+          Classic linear interpolation ("lerp"): <code class="inline">t</code> is the fraction of the move completed,
+          clamped to <code class="inline">[0, 1]</code> via <code class="inline">min(self.timer / MOVE_TIME, 1.0)</code>
+          while actively sliding, or forced to exactly <code class="inline">1.0</code> during the hold phase (fully
+          arrived at its interpolation target — which, remember, might just be a corridor midpoint for a restricted
+          move). <code class="inline">start + (end - start) * t</code> is the standard lerp formula applied separately
+          to x and y, and the result is passed through <code class="inline">_place</code> one more time so the drone
+          also respects the current camera pan.
+        </p>
+
+        <h3>Pass 4 — <code class="inline">_draw_hud()</code> and the <code class="inline">_TextPool</code> trick</h3>
+        <pre><span class="k">class</span> _TextPool:
+    <span class="k">def</span> __init__(self) -> <span class="k">None</span>:
+        self._items: dict[str, arcade.Text] = {}
+
+    <span class="k">def</span> draw(self, key, text, x, y, color, size, anchor_x=<span class="s">"left"</span>, bold=<span class="k">False</span>) -> <span class="k">None</span>:
+        item = self._items.get(key)
+        <span class="k">if</span> item <span class="k">is</span> <span class="k">None</span>:
+            item = arcade.Text(text, x, y, color, size, anchor_x=anchor_x, bold=bold)
+            self._items[key] = item
+        <span class="k">else</span>:
+            item.text, item.x, item.y, item.color = text, x, y, color
+        item.draw()</pre>
+        <p>
+          Arcade's own documentation warns that calling the convenience function <code class="inline">arcade.draw_text()</code>
+          every frame is slow, because it silently creates a brand-new <code class="inline">arcade.Text</code> object
+          (with its own internal font-rendering setup) every single call — at 60 frames per second with a dozen text
+          labels, that's hundreds of throwaway objects per second. <code class="inline">_TextPool</code> fixes this
+          with a simple <strong>object pool</strong> keyed by a caller-chosen string <code class="inline">key</code>
+          (e.g. <code class="inline">f"d{drone_id}"</code>, <code class="inline">f"name-{name}"</code>): the first
+          time a given key is drawn, a real <code class="inline">arcade.Text</code> object is created and cached in
+          <code class="inline">self._items</code>; every subsequent call with that same key just mutates the
+          <em>existing</em> object's <code class="inline">.text</code>/<code class="inline">.x</code>/<code class="inline">.y</code>/<code class="inline">.color</code>
+          fields in place and re-<code class="inline">.draw()</code>s it — no new allocation. This is why every
+          drawing call in this file goes through <code class="inline">self.labels.draw(...)</code> instead of
+          calling Arcade's text function directly.
+        </p>
+        <pre><span class="k">def</span> _draw_hud(self) -> <span class="k">None</span>:
+    self.labels.draw(<span class="s">"title"</span>, <span class="s">"FLY-IN"</span>, 30, self.height - 40, TEXT, 20, bold=<span class="k">True</span>)
+    status = <span class="s">"paused"</span> <span class="k">if</span> self.paused <span class="k">else</span> <span class="s">"running"</span>
+    self.labels.draw(<span class="s">"status"</span>, f<span class="s">"turn {min(self.turn+1, len(self.log))}/{len(self.log)}  {status}"</span>, self.width-260, self.height-38, TEXT, 13)
+    self.labels.draw(<span class="s">"controls"</span>, <span class="s">"arrows: pan camera   space: pause   r: replay"</span>, 30, 28, TEXT, 12)</pre>
+        <p>
+          A fixed title, a live "turn X/Y  running/paused" counter (<code class="inline">min(self.turn+1, len(self.log))</code>
+          keeps the displayed turn number from ever showing one past the last real turn once the replay is finished),
+          and a static one-line reminder of the keyboard controls.
+        </p>
+      </section>
+
+      <section>
+        <h2>Color resolution: <code class="inline">_zone_color(zone)</code></h2>
+        <pre>TYPE_COLOR = {<span class="s">"normal"</span>: (120,126,138), <span class="s">"priority"</span>: (52,211,153), <span class="s">"restricted"</span>: (167,139,250), <span class="s">"blocked"</span>: (60,64,74)}
+NAMED_COLOR = {<span class="s">"red"</span>: (239,68,68), <span class="s">"green"</span>: (34,197,94), <span class="s">"blue"</span>: (59,130,246), ...}
+START_COLOR = (56,189,248)
+END_COLOR = (250,204,21)
+
+<span class="k">@staticmethod</span>
+<span class="k">def</span> _zone_color(zone) -> tuple[int, int, int]:
+    <span class="k">if</span> zone.is_start: <span class="k">return</span> START_COLOR
+    <span class="k">if</span> zone.is_end: <span class="k">return</span> END_COLOR
+    <span class="k">if</span> zone.color: <span class="k">return</span> NAMED_COLOR.get(zone.color.lower(), TYPE_COLOR[<span class="s">"normal"</span>])
+    <span class="k">return</span> TYPE_COLOR[zone.zone_type]</pre>
+        <p>
+          A clear priority order, checked top to bottom: the start hub is always cyan, the end hub is always yellow
+          — regardless of anything the map file said — because being the unique start/end is more visually important
+          than any custom color. Otherwise, if the map file supplied a <code class="inline">color=</code> metadata
+          value (Step 02's <code class="inline">Zone.color</code> field), look it up in the small
+          <code class="inline">NAMED_COLOR</code> table (case-insensitive via <code class="inline">.lower()</code>),
+          falling back to the generic "normal" gray if the named color isn't recognized rather than crashing.
+          Failing that, fall back to a color purely driven by the zone's <em>type</em> — every restricted zone
+          is violet, every priority zone is green, etc., which is a genuinely useful visual even on maps that never
+          set an explicit <code class="inline">color=</code> at all.
+        </p>
+      </section>
+
+      <section>
+        <h2>Kicking it off: <code class="inline">show_simulation(graph, log)</code></h2>
+        <pre><span class="k">def</span> show_simulation(graph: Graph, log: list[str]) -> <span class="k">None</span>:
+    Visualizer(graph, log)
+    arcade.run()</pre>
+        <p>
+          Constructing a <code class="inline">Visualizer</code> runs its <code class="inline">__init__</code> (which,
+          via <code class="inline">super().__init__</code>, registers the new window with Arcade's internal window
+          manager — this is why the object doesn't need to be assigned to a variable; Arcade keeps track of it
+          globally once created). <code class="inline">arcade.run()</code> is a <strong>blocking call</strong>: it
+          starts Arcade's main event loop, which repeatedly calls <code class="inline">on_update</code> then
+          <code class="inline">on_draw</code> on every open window, dispatches keyboard/mouse events to
+          <code class="inline">on_key_press</code>/etc., and only returns once every Arcade window has been closed by
+          the user. This is why <code class="inline">show_simulation</code> is the very last thing
+          <code class="inline">orchestrator.run()</code> calls before its own <code class="inline">return 0</code> —
+          nothing after it executes until the visualization window is closed.
+        </p>
+      </section>
+    </div>
+
+    <!-- ================================================================ -->
+    <div class="step" id="step-11">
+      <div class="step-head"><span class="step-num">STEP 11</span><h1 class="step-title">The full pipeline, recapped as one call chain</h1></div>
+      <p class="step-file">Every arrow below is a real function call you can trace in the source.</p>
+
+      <div class="callchain">
+        <code>__main__.main()</code><br>
+        <span class="arr">&nbsp;&nbsp;└─▶</span> <code>FlyInApp.from_argv() → _parse_args() [argparse]</code><br>
+        <span class="arr">&nbsp;&nbsp;└─▶</span> <code>FlyInApp.run()</code><br>
+        <span class="arr">&nbsp;&nbsp;&nbsp;&nbsp;├─▶</span> <code>MapParser(path).parse()</code> → loops <code>dispatch_line</code> → <code>parse_zone_line</code> / <code>parse_connection_line</code> → builds <code>Zone</code>/<code>Connection</code>/<code>Graph</code> → returns <code>(graph, nb_drones)</code><br>
+        <span class="arr">&nbsp;&nbsp;&nbsp;&nbsp;├─▶</span> <code>PathFinder(graph).get_drones_paths(n)</code> → <code>find_paths(n)</code> loop → <code>find_path()</code> [time-expanded Dijkstra + reservations] → <code>_reserve_schedule()</code> per drone → returns <code>list[list[str]]</code><br>
+        <span class="arr">&nbsp;&nbsp;&nbsp;&nbsp;├─▶</span> <code>[Drone(i, start, path) for i in range(1, n+1)]</code><br>
+        <span class="arr">&nbsp;&nbsp;&nbsp;&nbsp;├─▶</span> <code>Simulator(graph, drones).run()</code> → loops <code>step()</code> = <code>_process_arrivals</code> → <code>_propose_moves</code> → <code>_resolve_moves</code> → <code>_record_turn</code> → returns <code>log: list[str]</code><br>
+        <span class="arr">&nbsp;&nbsp;&nbsp;&nbsp;├─▶</span> <code>print(line)</code> for each log line, optional <code>--summary</code><br>
+        <span class="arr">&nbsp;&nbsp;&nbsp;&nbsp;└─▶</span> <code>if --visual: show_simulation(graph, log)</code> → <code>Visualizer(graph, log)</code> + <code>arcade.run()</code> [blocks until window closed]
+      </div>
+
+      <h3>Data handed from step to step</h3>
+      <table>
+        <tr><th>Produced by</th><th>Value</th><th>Consumed by</th></tr>
+        <tr><td><code>MapParser.parse()</code></td><td><code>(Graph, int)</code></td><td><code>PathFinder(graph)</code>, <code>Simulator(graph, ...)</code>, <code>Drone(..., start, ...)</code></td></tr>
+        <tr><td><code>PathFinder.get_drones_paths()</code></td><td><code>list[list[str]]</code> — one zone-name path per drone</td><td><code>Drone(i, start, paths[i-1])</code></td></tr>
+        <tr><td><code>Drone(...)</code> × n</td><td><code>list[Drone]</code></td><td><code>Simulator(graph, drones)</code></td></tr>
+        <tr><td><code>Simulator.run()</code></td><td><code>list[str]</code> — one formatted line per turn</td><td><code>print()</code>, <code>--summary</code>, <code>show_simulation(graph, log)</code></td></tr>
+        <tr><td><code>show_simulation()</code></td><td>—</td><td>opens a blocking Arcade window; nothing downstream</td></tr>
+      </table>
+
+      <details class="qa">
+        <summary>Why does PathFinder run once per drone in a simple loop, instead of a single multi-agent search?</summary>
+        <div class="answer">Because true optimal multi-agent pathfinding (solving for all drones jointly) is NP-hard, as the roadmap
+        notes. Running independent single-agent Dijkstra searches, but making each one aware of every previous
+        drone's reserved (zone, turn) and (link, turn) slots, gets almost all of the benefit — later drones
+        naturally avoid earlier drones' routes or wait for them — at a tiny fraction of the implementation and
+        runtime cost.</div>
+      </details>
+      <details class="qa">
+        <summary>Why does the Simulator not simply trust the turn numbers PathFinder computed?</summary>
+        <div class="answer">PathFinder's reservations are an idealized prediction made while looking only at earlier drones' plans.
+        The real Simulator resolves capacity live and breaks ties by drone ID (Step 8c) — a drone can end up
+        delayed by exactly this tie-breaking in a way the pathfinder's static reservation table didn't predict. So
+        the Simulator re-derives arrivals turn by turn from the deduplicated zone-name path, rather than replaying
+        PathFinder's exact schedule.</div>
+      </details>
+      <details class="qa">
+        <summary>Where would you add a --capacity-info flag, concretely?</summary>
+        <div class="answer">Add it in <code class="inline">FlyInApp._parse_args</code> as another
+        <code class="inline">store_true</code> argument, then in <code class="inline">Simulator._record_turn</code>
+        (Step 8d) append extra per-token detail (e.g. current/max occupancy of the destination zone) when a flag is
+        threaded through — the cleanest path is passing the flag into <code class="inline">Simulator.__init__</code>
+        so <code class="inline">_record_turn</code> can read it directly without new parameters on every call.</div>
+      </details>
+    </div>
+
+    <footer class="next-foot">
+      <h2 style="border:none; padding:0; margin-bottom:8px;">One-paragraph mental model to keep</h2>
+      <p class="dim">
+        <code class="inline">MapParser</code> turns text into live objects. <code class="inline">PathFinder</code> runs
+        the same time-aware Dijkstra once per drone, remembering every previous drone's reservations so later drones
+        route around earlier ones. <code class="inline">Simulator</code> then re-executes those plans turn by turn,
+        the only place capacity is actually enforced live, always freeing departures before checking arrivals and
+        breaking ties by drone ID. <code class="inline">Visualizer</code> is a pure playback layer on top of the
+        finished text log — it never touches simulation logic, it only interpolates positions between the zones the
+        log already names.
+      </p>
+    </footer>
+
+  </main>
+</div>
+</body>
+</html>
