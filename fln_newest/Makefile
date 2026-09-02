@@ -10,7 +10,7 @@ install:
 run:
 	@$(PYTHON) $(ENTRY) $(ARGS)
 
-gui:
+visual:
 	@$(PYTHON) $(ENTRY) $(ARGS) --visual
 
 debug:

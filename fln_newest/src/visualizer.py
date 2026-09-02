@@ -42,7 +42,7 @@ ARROWS = {
 }
 
 
-def _ngon_point(
+def ngon_point(
     cx: float, cy: float, radius: float, angle: float, sides: int,
     rotation: float = ROTATION,
 ) -> tuple[float, float]:
@@ -54,35 +54,34 @@ def _ngon_point(
     return cx + r * math.cos(angle), cy + r * math.sin(angle)
 
 
-def _ngon_vertices(
+def ngon_vertices(
     cx: float, cy: float, radius: float, sides: int,
     rotation: float = ROTATION,
 ) -> list[tuple[float, float]]:
     """The `sides` corner points of a regular polygon."""
     step = 2 * math.pi / sides
     return [
-        _ngon_point(cx, cy, radius, rotation + i * step, sides, rotation)
+        ngon_point(cx, cy, radius, rotation + i * step, sides, rotation)
         for i in range(sides)
     ]
 
 
-class _TextPool:
-    """Reuse arcade.Text objects instead of calling arcade.draw_text() every
-    frame, which arcade flags as too slow for per-frame rendering."""
+class TextPool:
+    """Reuse arcade.Text objects instead of creating one every frame."""
 
     def __init__(self) -> None:
-        self._items: dict[str, arcade.Text] = {}
+        self.items: dict[str, arcade.Text] = {}
 
     def draw(
         self, key: str, text: str, x: float, y: float,
         color: tuple[int, int, int], size: int,
         anchor_x: str = "left", bold: bool = False,
     ) -> None:
-        item = self._items.get(key)
+        item = self.items.get(key)
         if item is None:
             item = arcade.Text(
                 text, x, y, color, size, anchor_x=anchor_x, bold=bold)
-            self._items[key] = item
+            self.items[key] = item
         else:
             item.text, item.x, item.y, item.color = text, x, y, color
         item.draw()
@@ -96,7 +95,7 @@ class Visualizer(arcade.Window):
         arcade.set_background_color(BG)
         self.graph = graph
         self.log = log
-        self.zoom, self.origin = self._fit()
+        self.zoom, self.origin = self.fit()
         self.cam = [0.0, 0.0]
         self.keys_held: set[int] = set()
 
@@ -105,21 +104,20 @@ class Visualizer(arcade.Window):
         self.holding = False
         self.paused = False
 
-        self.zone_of = self._start_positions()
-        self.pos = {d: self._layout(z) for d, z in self.zone_of.items()}
+        self.zone_of = self.start_positions()
+        self.pos = {d: self.layout(z) for d, z in self.zone_of.items()}
         self.moves: dict[
             int, tuple[tuple[float, float], tuple[float, float], str | None]
         ] = {}
         self.midway: set[int] = set()
         self.edge_of: dict[int, tuple[str, str]] = {}
         self.zone_r = 20
-        self.labels = _TextPool()
-        self._zone_number = {
+        self.labels = TextPool()
+        self.zone_number = {
             name: i for i, name in enumerate(self.graph.zones, 1)}
 
-    def _fit(self) -> tuple[tuple[float, float], tuple[float, float]]:
-        """Independent X/Y scales that stretch the map to fill the window,
-        so zones sit as far apart as the window allows on each axis."""
+    def fit(self) -> tuple[tuple[float, float], tuple[float, float]]:
+        """Independent X/Y scales that stretch the map to fill the window."""
         zones = list(self.graph.zones.values())
         xs = [z.x for z in zones] or [0]
         ys = [z.y for z in zones] or [0]
@@ -127,25 +125,24 @@ class Visualizer(arcade.Window):
         span_y = max(max(ys) - min(ys), 1)
         sx = (self.width - 2 * MARGIN) / span_x
         sy = (self.height - 2 * MARGIN) / span_y
-        offset = (MARGIN - min(xs) * sx, MARGIN - min(ys) * sy)
-        return (sx, sy), offset
+        return (sx, sy), (MARGIN - min(xs) * sx, MARGIN - min(ys) * sy)
 
-    def _layout(self, zone_name: str) -> tuple[float, float]:
+    def layout(self, zone_name: str) -> tuple[float, float]:
         """World position of a zone, before the camera pan is applied."""
         zone = self.graph.zones[zone_name]
         sx, sy = self.zoom
         ox, oy = self.origin
         return zone.x * sx + ox, zone.y * sy + oy
 
-    def _place(self, x: float, y: float) -> tuple[float, float]:
+    def place(self, x: float, y: float) -> tuple[float, float]:
         """Apply the current camera pan to a world position."""
         return x + self.cam[0], y + self.cam[1]
 
-    def _screen_pos(self, zone_name: str) -> tuple[float, float]:
+    def screen_pos(self, zone_name: str) -> tuple[float, float]:
         """Screen position of a zone: world layout plus the camera pan."""
-        return self._place(*self._layout(zone_name))
+        return self.place(*self.layout(zone_name))
 
-    def _start_positions(self) -> dict[int, str]:
+    def start_positions(self) -> dict[int, str]:
         """Every drone begins the replay parked at the start hub."""
         if self.graph.start is None:
             return {}
@@ -155,7 +152,7 @@ class Visualizer(arcade.Window):
                 highest = max(highest, int(token[1:].split("-", 1)[0]))
         return {d: self.graph.start.name for d in range(1, highest + 1)}
 
-    def _start_turn(self) -> None:
+    def start_turn(self) -> None:
         """Begin animating every drone movement listed in this turn."""
         self.moves.clear()
         for token in self.log[self.turn].split():
@@ -163,17 +160,17 @@ class Visualizer(arcade.Window):
             target = token.split("-", 1)[1]
             start = self.pos[drone_id]
             if target in self.graph.zones:
-                self.moves[drone_id] = (start, self._layout(target), target)
+                self.moves[drone_id] = (start, self.layout(target), target)
                 self.midway.discard(drone_id)
             else:
                 a, b = target.split("-", 1)
-                pa, pb = self._layout(a), self._layout(b)
+                pa, pb = self.layout(a), self.layout(b)
                 mid = ((pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2)
                 self.moves[drone_id] = (start, mid, None)
                 self.midway.add(drone_id)
                 self.edge_of[drone_id] = (a, b)
 
-    def _finish_turn(self) -> None:
+    def finish_turn(self) -> None:
         """Land every animated drone and advance to the next turn."""
         for drone_id, (_, end, target) in self.moves.items():
             self.pos[drone_id] = end
@@ -184,7 +181,7 @@ class Visualizer(arcade.Window):
         self.timer = 0.0
         self.holding = False
 
-    def _arrived(self) -> dict[int, str]:
+    def arrived(self) -> dict[int, str]:
         """Drones that finished animating into a zone this turn: they merge
         into that zone's wedge instead of floating above it."""
         if not self.holding:
@@ -194,22 +191,22 @@ class Visualizer(arcade.Window):
             if target is not None
         }
 
-    def _reset(self) -> None:
+    def reset(self) -> None:
         """Restart the replay from the very first turn."""
         self.turn = 0
         self.timer = 0.0
         self.holding = False
         self.paused = False
-        self.zone_of = self._start_positions()
-        self.pos = {d: self._layout(z) for d, z in self.zone_of.items()}
+        self.zone_of = self.start_positions()
+        self.pos = {d: self.layout(z) for d, z in self.zone_of.items()}
         self.moves.clear()
         self.midway.clear()
 
-    def _drone_screen_pos(self, drone_id: int) -> tuple[float, float]:
+    def drone_screen_pos(self, drone_id: int) -> tuple[float, float]:
         """Interpolated screen position of a drone mid-animation."""
         start, end, _ = self.moves[drone_id]
         t = 1.0 if self.holding else min(self.timer / MOVE_TIME, 1.0)
-        return self._place(
+        return self.place(
             start[0] + (end[0] - start[0]) * t,
             start[1] + (end[1] - start[1]) * t,
         )
@@ -224,12 +221,12 @@ class Visualizer(arcade.Window):
             return
 
         if not self.moves and not self.holding:
-            self._start_turn()
+            self.start_turn()
         self.timer += dt
         if not self.holding and self.timer >= MOVE_TIME:
             self.timer, self.holding = 0.0, True
         elif self.holding and self.timer >= HOLD_TIME:
-            self._finish_turn()
+            self.finish_turn()
 
     def on_key_press(self, key: int, modifiers: int) -> None:
         if key in ARROWS:
@@ -237,7 +234,7 @@ class Visualizer(arcade.Window):
         elif key == arcade.key.SPACE:
             self.paused = not self.paused
         elif key == arcade.key.R:
-            self._reset()
+            self.reset()
 
     def on_key_release(self, key: int, modifiers: int) -> None:
         self.keys_held.discard(key)
@@ -247,47 +244,41 @@ class Visualizer(arcade.Window):
         self.zone_r = (
             ((self.width / (2500 + self.width))
                 + (self.height / (1500 + self.height))) * 20)
-        self.zoom, self.origin = self._fit()
+        self.zoom, self.origin = self.fit()
 
     def on_draw(self) -> None:
         self.clear()
-        self._draw_connections()
-        self._draw_zones()
-        self._draw_moving_drones()
-        self._draw_hud()
+        self.draw_connections()
+        self.draw_zones()
+        self.draw_moving_drones()
+        self.draw_hud()
 
-    def _draw_connections(self) -> None:
+    def draw_connections(self) -> None:
         """Draw every edge, highlighting the ones currently in use."""
         active = {
             frozenset(self.edge_of[d])
             for d in self.midway if d in self.edge_of
         }
         for conn in self.graph.connections:
-            a = self._screen_pos(conn.zone_a.name)
-            b = self._screen_pos(conn.zone_b.name)
+            a = self.screen_pos(conn.zone_a.name)
+            b = self.screen_pos(conn.zone_b.name)
             is_active = (
                 frozenset((conn.zone_a.name, conn.zone_b.name)) in active)
             color, width = (LINE_ACTIVE, 3) if is_active else (LINE, 2)
             arcade.draw_line(*a, *b, color, width)
 
-    def _name_label_y(self, y: float, idx: int) -> float:
-        """Odd-numbered zones (by file order) get their name above; even
-        get it below, so neighboring labels don't collide."""
-        offset = self.zone_r + 18
-        return y + offset if idx % 2 else y - offset
-
-    def _draw_zones(self) -> None:
+    def draw_zones(self) -> None:
         """Draw every zone as a hexagon (pentagon for start/end): a type
         letter when empty, drone wedges once occupied."""
         moving = set(self.moves)
-        arrived = self._arrived()
-        for name, idx in self._zone_number.items():
+        arrived = self.arrived()
+        for name, idx in self.zone_number.items():
             zone = self.graph.zones[name]
-            x, y = self._screen_pos(name)
-            ring = self._zone_color(zone)
+            x, y = self.screen_pos(name)
+            ring = self.zone_color(zone)
             sides = 5 if (zone.is_start or zone.is_end) else 6
             arcade.draw_polygon_outline(
-                _ngon_vertices(x, y, self.zone_r + 2, sides), ring, 2)
+                ngon_vertices(x, y, self.zone_r + 2, sides), ring, 2)
 
             occupants = sorted(
                 [
@@ -297,22 +288,23 @@ class Visualizer(arcade.Window):
                 + [d for d, z in arrived.items() if z == name]
             )
             if occupants:
-                self._draw_occupants(x, y, sides, occupants)
+                self.draw_occupants(x, y, sides, occupants)
             else:
                 fill = tuple(max(c // 5, 20) for c in ring)
                 arcade.draw_polygon_filled(
-                    _ngon_vertices(x, y, self.zone_r, sides), fill)
+                    ngon_vertices(x, y, self.zone_r, sides), fill)
                 letter = ("S" if zone.is_start else
                           "E" if zone.is_end else
                           zone.zone_type[0].upper())
-                self.labels.draw(f"letter-{name}", letter, x, y - 8, ring, 16,
-                                 anchor_x="center", bold=True)
+                self.labels.draw(
+                    f"letter-{name}", letter, x, y - 8, ring, 16,
+                    anchor_x="center", bold=True)
 
+            label_y = y + self.zone_r + 18 if idx % 2 else y - self.zone_r - 18
             self.labels.draw(
-                f"name-{name}", name, x, self._name_label_y(y, idx),
-                TEXT, 9, anchor_x="center")
+                f"name-{name}", name, x, label_y, TEXT, 9, anchor_x="center")
 
-    def _draw_occupants(
+    def draw_occupants(
         self, x: float, y: float, sides: int, drones: list[int]
     ) -> None:
         """Split the zone polygon into one wedge per occupying drone."""
@@ -322,13 +314,13 @@ class Visualizer(arcade.Window):
             a0, a1 = i * step, (i + 1) * step
             samples = max(2, int(math.degrees(step) / 10))
             arc = [
-                _ngon_point(
+                ngon_point(
                     x, y, self.zone_r, a0 + (a1 - a0) * k / samples, sides)
                 for k in range(samples + 1)
             ]
             arcade.draw_polygon_filled([(x, y), *arc], WHITE)
         for i in range(n if n > 1 else 0):
-            ax, ay = _ngon_point(x, y, self.zone_r, i * step, sides)
+            ax, ay = ngon_point(x, y, self.zone_r, i * step, sides)
             arcade.draw_line(x, y, ax, ay, BG, 2)
         if n <= 6:
             r = self.zone_r * 0.55 if n > 1 else 0
@@ -340,19 +332,20 @@ class Visualizer(arcade.Window):
                     BG, 10, anchor_x="center", bold=True,
                 )
 
-    def _draw_moving_drones(self) -> None:
+    def draw_moving_drones(self) -> None:
         """Draw drones still traveling: not yet merged into a zone's wedge."""
-        arrived = self._arrived()
+        arrived = self.arrived()
         for drone_id in self.moves:
             if drone_id in arrived:
                 continue
-            x, y = self._drone_screen_pos(drone_id)
+            x, y = self.drone_screen_pos(drone_id)
             arcade.draw_circle_filled(x, y, MOVE_R, WHITE)
             arcade.draw_circle_outline(x, y, MOVE_R + 1, BG, 2)
-            self.labels.draw(f"d{drone_id}", f"D{drone_id}", x, y - 5, BG, 9,
-                             anchor_x="center", bold=True)
+            self.labels.draw(
+                f"d{drone_id}", f"D{drone_id}", x, y - 5, BG, 9,
+                anchor_x="center", bold=True)
 
-    def _draw_hud(self) -> None:
+    def draw_hud(self) -> None:
         self.labels.draw(
             "title", "FLY-IN", 30, self.height - 40, TEXT, 20, bold=True)
         status = "paused" if self.paused else "running"
@@ -364,8 +357,7 @@ class Visualizer(arcade.Window):
             "controls", "arrows: pan camera   space: pause   r: replay",
             30, 28, TEXT, 12)
 
-    @staticmethod
-    def _zone_color(zone) -> tuple[int, int, int]:
+    def zone_color(self, zone) -> tuple[int, int, int]:
         """Ring color: role first (start/end), then custom color, then type."""
         if zone.is_start:
             return START_COLOR
