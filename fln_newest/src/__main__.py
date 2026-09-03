@@ -10,7 +10,7 @@ from graph import Drone
 from parser import MapParseError, MapParser
 from pathfinder import PathFinder
 from simulator import SimulationError, Simulator
-from visualizer import show_simulation
+from visualizer import print_summary, show_simulation
 
 
 class Pipeline:
@@ -27,19 +27,9 @@ class Pipeline:
         )
         parser.add_argument("map", type=Path, help="path to the map file")
         parser.add_argument(
-            "--no-color",
-            action="store_true", help="disable colored terminal output")
-        parser.add_argument(
-            "--map-info", action="store_true",
-            help="show the map before the simulation")
-        parser.add_argument(
-            "--summary",
+            "--no-visual",
             action="store_true",
-            help="show simulation statistics after the movements")
-        parser.add_argument(
-            "--visual",
-            action="store_true",
-            help="show the simulation in an Arcade window")
+            help="skip the graphical window and only print the summary")
         return cls(parser.parse_args(argv))
 
     def run(self) -> int:
@@ -60,11 +50,8 @@ class Pipeline:
             ]
             log = Simulator(graph, drones).run()
 
-            for line in log:
-                print(line)
-            if self.args.summary:
-                print(f"Total turns: {len(log)}")
-            if self.args.visual:
+            print_summary(graph, log)
+            if not self.args.no_visual:
                 show_simulation(graph, log)
             return 0
         except MapParseError as e:

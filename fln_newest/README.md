@@ -2,330 +2,176 @@
 
 # Fly-In
 
-## Description
-
-Fly-In is a Python simulation that routes a fleet of drones from a
-`start_hub` to an `end_hub` through a network of connected zones.
-
-The goal is to finish the simulation in as few turns as possible while
+Fly-In routes a fleet of drones from a `start_hub` to an `end_hub` through a
+network of connected zones, minimizing total simulation turns while
 respecting:
 
 - zone occupancy limits;
 - connection capacities;
 - blocked zones;
-- restricted zones with two-turn movement;
-- priority zones used as a pathfinding tie-break;
-- simultaneous movement and waiting.
+- restricted zones (2-turn movement);
+- priority zones (preferred on equal-cost routes).
 
-The project is completely object-oriented and does not use a graph library.
-The graph, parser, pathfinding algorithm, scheduler, terminal output,
-and optional graphical visualization are implemented directly in Python.
+The project is fully object-oriented and written in plain Python — no graph
+library, no external pathfinding package. The only third-party dependency is
+`arcade`, used purely for the visualization window.
 
 ## Project structure
 
 ```text
-Fly_In/
-├── src/
-│   ├── __main__.py
-│   ├── main.py
-│   ├── orchestrator.py
-│   ├── parser.py
-│   ├── domain.py
-│   ├── graph.py
-│   ├── pathfinder.py
-│   ├── simulator.py
-│   └── visualizer.py
+FLY_IN/
+├── main.py          # CLI entry point, wires the pipeline together
+├── graph.py          # Zone, Connection, Drone, TransitState, Graph
+├── parser.py         # MapParser: text file -> validated Graph
+├── pathfinder.py      # PathFinder: reservation-aware Dijkstra
+├── simulator.py       # Simulator: turn-by-turn scheduling engine
+├── visualizer.py      # Arcade window + terminal summary
 ├── maps/
 │   ├── easy/
 │   ├── medium/
 │   ├── hard/
 │   └── challenger/
-├── tests/
-├── Makefile
 ├── requirements.txt
+├── Makefile
 ├── .gitignore
 └── README.md
 ```
 
-## Architecture
-
-The application follows a simple flow:
+## Pipeline
 
 ```text
-MapParser
+MapParser.parse()
     ↓
-Graph + Zone + Connection
+Graph (Zone + Connection)
     ↓
-PathFinder
+PathFinder.get_drones_paths()
     ↓
-Drone paths
+Drone objects
     ↓
-Simulator
+Simulator.run()
     ↓
-Visualizer
+terminal summary + Arcade visualizer
 ```
-
-Each class has one main responsibility:
 
 | Class | Responsibility |
 |---|---|
-| `Zone` | Store zone data and occupancy |
-| `Connection` | Store an edge and transit capacity |
-| `Drone` | Store one drone's state and path |
-| `Graph` | Store the network and answer adjacency queries |
-| `MapParser` | Validate a map file and build the graph |
-| `PathFinder` | Find a cheapest route with Dijkstra |
-| `Simulator` | Schedule all drones turn by turn |
-| `Visualizer` | Display the simulation graphically with Arcade |
-| `FlyInApp` | Connect all components |
+| `Zone` | Identity, position, type, and live occupancy of one node |
+| `Connection` | A bidirectional edge and its transit capacity |
+| `Drone` | One agent's current position and assigned path |
+| `Graph` | Owns every zone/connection, answers adjacency queries |
+| `MapParser` | Validates a map file and builds the `Graph` |
+| `PathFinder` | Finds one collision-aware route per drone with Dijkstra |
+| `Simulator` | Schedules every drone, turn by turn, under live capacity |
+| `Visualizer` | Replays the simulation in an Arcade window |
 
 ## Algorithm
 
-### 1. Parsing
+### Parsing
 
-`MapParser` reads the map line by line and validates the format.
+`MapParser` reads the map line by line and validates it fully before a
+simulation ever runs: drone count, exactly one start/end hub, unique zone
+names and coordinates, valid zone types, positive capacities, known zones in
+every connection, no duplicate connections, and a fully connected graph.
+Parsing errors are reported with their line number.
 
-It checks:
+### Pathfinding
 
-- positive drone count;
-- exactly one start and one end;
-- unique zone names;
-- integer coordinates;
-- valid zone types;
-- positive capacities;
-- known zones in connections;
-- duplicate connections;
-- valid metadata;
-- comments beginning with `#`.
+`PathFinder` runs a self-written Dijkstra over a *time-expanded* graph: every
+search state is `(zone, turn)`, not just `zone`. Entering a zone costs:
 
-Parsing errors are reported with the line number.
+- `normal` / `priority`: 1 turn;
+- `restricted`: 2 turns;
+- `blocked`: never (no edge exists).
 
-### 2. Pathfinding
+On equal-cost routes, the one passing through more `priority` zones wins.
+Each drone is routed in turn against a shared reservation table built from
+every drone routed before it — this is what lets multiple drones reach the
+goal on distinct, non-colliding routes (or the same route safely staggered in
+time) without ever needing to re-plan one another.
 
-`PathFinder` uses a self-written Dijkstra algorithm. It keeps the same
-Dijkstra approach for every search, but searches in `(zone, turn)` states
-so it can also consider waiting and existing reservations.
+### Simulation
 
-The cost of entering a zone is:
+`Simulator` is the real-time authority. Every turn it:
 
-- normal: `1`;
-- priority: `1`;
-- restricted: `2`;
-- blocked: impossible.
+1. completes any restricted move whose arrival turn has been reached;
+2. asks every remaining drone what it wants to do next;
+3. resolves those requests in drone-ID order, checking live zone and
+   connection capacity;
+4. commits a restricted move as soon as it starts, reserving its destination
+   slot so it can't be double-booked while the drone is mid-flight;
+5. sends a rejected drone back to waiting — it simply retries next turn.
 
-When two routes have the same cost, the route containing more priority
-zones is preferred.
-
-After a path is found, the pathfinder reserves its zone and connection
-capacity. It then runs Dijkstra again for the next drone. This naturally
-allows drones to use different routes when a previous route is full, or
-to wait when using the same route is still the best choice.
-
-The result is therefore a list of paths instead of one path copied to
-every drone. The pathfinder stays simple: Dijkstra finds the route,
-reservations describe already planned traffic, and the simulator remains
-responsible for the final turn-by-turn execution.
-
-### 3. Simulation
-
-`Simulator` is responsible for the multi-drone problem.
-
-For every turn it:
-
-1. completes restricted movements whose arrival turn has been reached;
-2. collects the next requested move of each active drone;
-3. frees the origin zones of departing drones;
-4. resolves proposals in drone-ID order;
-5. checks destination and connection capacities;
-6. starts restricted movements only when their future destination slot
-   is available;
-7. makes rejected drones wait;
-8. records the movements for that turn.
-
-A restricted movement is committed when it starts and arrives on the
-next simulation turn. This represents the movement's two-turn cost:
-one turn is spent entering/traversing the connection and the next turn
-completes the arrival. The destination slot is reserved when the
-movement starts, so the drone cannot be stranded in the connection.
-
-The simulation stops as soon as every drone reaches the end hub.
+The simulation stops the instant every drone has reached the end hub.
 
 ### Complexity
 
-For one Dijkstra search:
-
-`O((V + E) log V)`
-
-where `V` is the number of zones and `E` is the number of connections.
-
-The simulator processes every drone once per turn, so turn resolution is
-approximately `O(D)` apart from graph lookups, where `D` is the number of
-drones.
-
-Paths are cached in the `Drone` objects and are not recalculated every
-turn.
+One Dijkstra search: `O((V + E) log V)`, where `V` is the number of zones and
+`E` the number of connections. Turn resolution is `O(D)` per turn beyond
+graph lookups, where `D` is the number of drones — each drone's route is
+computed once and only walked forward, never recomputed.
 
 ## Visualization
 
-The project includes a small Arcade graphical view. It is deliberately simple:
+Running the program opens an Arcade window by default: zones are hexagons
+(pentagons for start/end), colored by type or by their map metadata; an
+occupied zone splits into one wedge per drone; connections currently in use
+are highlighted.
 
-- zones are coloured circles using their map metadata when available;
-- connections are drawn as lines and active ones are highlighted;
-- drones are shown as small labelled circles;
-- restricted-zone drones are shown in the middle of their connection;
-- the current turn and total turns are displayed.
+**Controls**
 
-The simulation starts automatically. Press `SPACE` to pause or resume, and
-use `LEFT` / `RIGHT` to step through the turns manually.
+| Key | Effect |
+|---|---|
+| `space` | pause / resume |
+| `←` / `→` | while paused, step to the previous / next turn |
+| mouse drag | pan the camera |
+| `r` | replay from the first turn |
 
-Run it with:
+Alongside the window, a short summary is always printed to the terminal:
 
-```bash
-python3 src maps/easy/02_simple_fork.txt --visual
+```text
+Drones: 4
+Turns: 6
+Restricted-zone crossings: 2
+Priority-zone visits: 3
 ```
 
-Or:
+Pass `--no-visual` to skip the window entirely and only print that summary —
+useful in a headless environment.
 
-```bash
-make gui ARGS="maps/easy/02_simple_fork.txt"
-```
-
-Arcade is only a display layer. It does not perform pathfinding or simulation
-logic.
-
-## Instructions
-
-### Requirements
-
-- Python 3.10 or later
-- `flake8`
-- `mypy`
-
-The simulation itself uses only the Python standard library.
-
-### Installation
-
-Create a virtual environment if needed, then:
-
-```bash
-make install
-```
-
-Or install the development tools directly:
+## Installation
 
 ```bash
 python3 -m pip install -r requirements.txt
 ```
 
-### Run
-
-Run a map with:
-
-```bash
-make run ARGS="maps/easy/01_linear_path.txt"
-```
-
 or:
 
 ```bash
-python3 src maps/easy/01_linear_path.txt
+make install
 ```
 
-For a plain, non-colored run:
+## Usage
 
 ```bash
-python3 src --no-color maps/easy/01_linear_path.txt
+python3 main.py maps/easy/01_linear_path.txt
 ```
 
-To display the map before the simulation:
+Terminal-only:
 
 ```bash
-python3 src --map-info maps/easy/01_linear_path.txt
+python3 main.py --no-visual maps/easy/01_linear_path.txt
 ```
 
-To display final statistics:
-
-```bash
-python3 src --summary maps/easy/01_linear_path.txt
-```
-
-The default output contains only the required movement lines. Map
-information and statistics are optional.
-
-### Debug
-
-```bash
-make debug ARGS="maps/easy/01_linear_path.txt"
-```
-
-### Lint
-
-```bash
-make lint
-```
-
-This runs the mandatory Flake8 and Mypy checks.
-
-### Clean
-
-```bash
-make clean
-```
-
-## Testing
-
-The `tests/` directory contains small unit and integration tests for the
-parser, pathfinder, simulator, and command-line integration.
-
-Run them with:
-
-```bash
-python3 -m unittest discover -s tests -v
-```
-
-A useful manual test sequence is:
+Via the Makefile:
 
 ```bash
 make run ARGS="maps/easy/01_linear_path.txt"
-make run ARGS="maps/easy/02_simple_fork.txt"
-make run ARGS="maps/easy/03_basic_capacity.txt"
-make run ARGS="maps/medium/03_priority_puzzle.txt"
+make debug ARGS="maps/easy/01_linear_path.txt"   # run under pdb
+make lint                                         # flake8 + mypy
+make clean                                        # remove caches
 ```
-
-Then test the harder maps:
-
-```bash
-make run ARGS="maps/hard/01_maze_nightmare.txt"
-make run ARGS="maps/hard/02_capacity_hell.txt"
-make run ARGS="maps/hard/03_ultimate_challenge.txt"
-```
-
-The challenger map is optional:
-
-```bash
-make run ARGS="maps/challenger/01_the_impossible_dream.txt"
-```
-
-The subject gives the following reference targets:
-
-| Map | Target |
-|---|---:|
-| Linear path | ≤ 6 turns |
-| Simple fork | ≤ 8 turns |
-| Basic capacity | ≤ 6 turns |
-| Dead-end trap | ≤ 12 turns |
-| Circular loop | ≤ 15 turns |
-| Priority puzzle | ≤ 12 turns |
-| Maze nightmare | ≤ 30 turns |
-| Capacity hell | ≤ 35 turns |
-| Ultimate challenge | ≤ 45 turns |
-| Impossible Dream | ≤ 45 turns (optional) |
-
-These are optimization targets, not mandatory grading gates.
 
 ## Input format
-
-Example:
 
 ```text
 nb_drones: 5
@@ -342,64 +188,22 @@ connection: roof1-goal
 connection: corridorA-goal
 ```
 
-Zone metadata is optional:
-
-```text
-[zone=normal color=blue max_drones=2]
-```
-
-Connection metadata is optional:
-
-```text
-[max_link_capacity=2]
-```
-
-Zone names cannot contain spaces or dashes.
-
-## Output
-
-The required movement format is:
-
-```text
-D1-zone
-D1-connection
-```
-
-Multiple movements in one turn are space-separated:
-
-```text
-D1-roof1 D2-corridorA
-D1-roof2 D2-tunnelB
-D1-goal D2-goal
-```
-
-Stationary drones are omitted.
-
-For restricted zones, the connection name is displayed while the drone
-is in transit.
+Zone metadata (`[zone=... color=... max_drones=...]`) and connection metadata
+(`[max_link_capacity=...]`) are both optional and default to
+`zone=normal`, no color, `max_drones=1`, and `max_link_capacity=1`. Zone names
+cannot contain spaces or dashes. Lines starting with `#` are comments.
 
 ## Resources
 
 - 42 Fly-In subject — project requirements and constraints.
-- The Fly-In master course included with the project — project
-  architecture and implementation roadmap.
-- Python documentation — standard library reference.
-- Dijkstra's algorithm — fundamental shortest-path algorithm.
-- PEP 8 — Python style guidelines.
-- PEP 257 — Python docstring conventions.
-- Flake8 documentation — static style checking.
-- Mypy documentation — static type checking.
+- Python standard library documentation.
+- Dijkstra's algorithm.
+- The Arcade library documentation.
+- PEP 8 / PEP 257 — style and docstring conventions.
+- Flake8 / Mypy documentation — static checking.
 
 ### AI usage
 
-AI was used as a development assistant for:
-
-- reviewing the project structure against the subject and roadmap;
-- identifying missing integration code;
-- discussing parser, pathfinding, scheduling, and testing logic;
-- reviewing implementation decisions and edge cases;
-- helping prepare project documentation.
-
-All project code should be understood, reviewed, tested, and defended by
-the student. The subject explicitly requires critical checking of
-AI-generated material and peer review.
+AI was used as a development assistant for reviewing the project against the
+subject, identifying integration gaps, discussing parser/pathfinding/
+scheduling logic, reviewing edge cases, and preparing this documentation.

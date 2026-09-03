@@ -12,7 +12,6 @@ MARGIN = 120
 MOVE_R = 12
 MOVE_TIME = 0.6
 HOLD_TIME = 0.9
-PAN_SPEED = 350
 ROTATION = math.pi / 2
 
 BG = (16, 20, 28)
@@ -36,18 +35,13 @@ NAMED_COLOR = {
 START_COLOR = (56, 189, 248)
 END_COLOR = (250, 204, 21)
 
-ARROWS = {
-    arcade.key.LEFT: (-1, 0), arcade.key.RIGHT: (1, 0),
-    arcade.key.UP: (0, 1), arcade.key.DOWN: (0, -1),
-}
-
 
 def ngon_point(
     cx: float, cy: float, radius: float, angle: float, sides: int,
     rotation: float = ROTATION,
 ) -> tuple[float, float]:
-    """Point on a regular polygon's boundary at a given angle from its
-    center (angle need not land on a vertex)."""
+    """A point on a regular polygon's edge at a given angle from its center
+    (the angle does not need to land exactly on a corner)."""
     seg = 2 * math.pi / sides
     local = ((angle - rotation + seg / 2) % seg) - seg / 2
     r = radius * math.cos(seg / 2) / math.cos(local)
@@ -92,12 +86,11 @@ class Visualizer(arcade.Window):
 
     def __init__(self, graph: Graph, log: list[str]) -> None:
         super().__init__(WIDTH, HEIGHT, "Fly-In", resizable=True)
-        arcade.set_background_color(BG)
+        arcade.set_background_color(BG)  # type: ignore[arg-type]
         self.graph = graph
         self.log = log
         self.zoom, self.origin = self.fit()
         self.cam = [0.0, 0.0]
-        self.keys_held: set[int] = set()
 
         self.turn = 0
         self.timer = 0.0
@@ -115,6 +108,8 @@ class Visualizer(arcade.Window):
         self.labels = TextPool()
         self.zone_number = {
             name: i for i, name in enumerate(self.graph.zones, 1)}
+
+    # ---- setup -----------------------------------------------------
 
     def fit(self) -> tuple[tuple[float, float], tuple[float, float]]:
         """Independent X/Y scales that stretch the map to fill the window."""
@@ -152,6 +147,8 @@ class Visualizer(arcade.Window):
                 highest = max(highest, int(token[1:].split("-", 1)[0]))
         return {d: self.graph.start.name for d in range(1, highest + 1)}
 
+    # ---- turn playback ----------------------------------------------
+
     def start_turn(self) -> None:
         """Begin animating every drone movement listed in this turn."""
         self.moves.clear()
@@ -181,6 +178,15 @@ class Visualizer(arcade.Window):
         self.timer = 0.0
         self.holding = False
 
+    def goto(self, turn: int) -> None:
+        """Jump straight to the end of a given turn, no animation. Used by
+        the manual step-forward/step-backward controls while paused."""
+        turn = max(0, min(turn, len(self.log)))
+        self.reset()
+        for _ in range(turn):
+            self.start_turn()
+            self.finish_turn()
+
     def arrived(self) -> dict[int, str]:
         """Drones that finished animating into a zone this turn: they merge
         into that zone's wedge instead of floating above it."""
@@ -196,7 +202,6 @@ class Visualizer(arcade.Window):
         self.turn = 0
         self.timer = 0.0
         self.holding = False
-        self.paused = False
         self.zone_of = self.start_positions()
         self.pos = {d: self.layout(z) for d, z in self.zone_of.items()}
         self.moves.clear()
@@ -211,12 +216,9 @@ class Visualizer(arcade.Window):
             start[1] + (end[1] - start[1]) * t,
         )
 
-    def on_update(self, dt: float) -> None:
-        for key in self.keys_held:
-            dx, dy = ARROWS[key]
-            self.cam[0] += dx * PAN_SPEED * dt
-            self.cam[1] += dy * PAN_SPEED * dt
+    # ---- update & input -----------------------------------------------
 
+    def on_update(self, dt: float) -> None:
         if self.paused or self.turn >= len(self.log):
             return
 
@@ -229,15 +231,21 @@ class Visualizer(arcade.Window):
             self.finish_turn()
 
     def on_key_press(self, key: int, modifiers: int) -> None:
-        if key in ARROWS:
-            self.keys_held.add(key)
-        elif key == arcade.key.SPACE:
+        if key == arcade.key.SPACE:
             self.paused = not self.paused
         elif key == arcade.key.R:
             self.reset()
+        elif self.paused and key == arcade.key.RIGHT:
+            self.goto(self.turn + 1)
+        elif self.paused and key == arcade.key.LEFT:
+            self.goto(self.turn - 1)
 
-    def on_key_release(self, key: int, modifiers: int) -> None:
-        self.keys_held.discard(key)
+    def on_mouse_drag(
+        self, x: float, y: float, dx: float, dy: float,
+        buttons: int, modifiers: int,
+    ) -> None:
+        self.cam[0] += dx
+        self.cam[1] += dy
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
@@ -245,6 +253,8 @@ class Visualizer(arcade.Window):
             ((self.width / (2500 + self.width))
                 + (self.height / (1500 + self.height))) * 20)
         self.zoom, self.origin = self.fit()
+
+    # ---- drawing -----------------------------------------------------
 
     def on_draw(self) -> None:
         self.clear()
@@ -292,7 +302,8 @@ class Visualizer(arcade.Window):
             else:
                 fill = tuple(max(c // 5, 20) for c in ring)
                 arcade.draw_polygon_filled(
-                    ngon_vertices(x, y, self.zone_r, sides), fill)
+                    ngon_vertices(x, y, self.zone_r, sides),
+                    fill)  # type: ignore[arg-type]
                 letter = ("S" if zone.is_start else
                           "E" if zone.is_end else
                           zone.zone_type[0].upper())
@@ -354,10 +365,14 @@ class Visualizer(arcade.Window):
             f"turn {min(self.turn + 1, len(self.log))}/{len(self.log)} "
             f" {status}", self.width - 260, self.height - 38, TEXT, 13,)
         self.labels.draw(
-            "controls", "arrows: pan camera   space: pause   r: replay",
+            "controls",
+            "space: pause   left/right: step turn (while paused)   "
+            "drag: pan   r: replay",
             30, 28, TEXT, 12)
 
-    def zone_color(self, zone) -> tuple[int, int, int]:
+    def zone_color(  # type: ignore[no-untyped-def]
+            self,
+            zone) -> tuple[int, int, int]:
         """Ring color: role first (start/end), then custom color, then type."""
         if zone.is_start:
             return START_COLOR
@@ -372,3 +387,25 @@ def show_simulation(graph: Graph, log: list[str]) -> None:
     """Open the graphical simulation."""
     Visualizer(graph, log)
     arcade.run()
+
+
+def print_summary(graph: Graph, log: list[str]) -> None:
+    """Print a short terminal summary instead of the raw per-turn log:
+    how many drones, how many turns, and a couple of notable counts."""
+    drones = 0
+    restricted_crossings = 0
+    priority_visits = 0
+    for line in log:
+        for token in line.split():
+            drone_id, target = token[1:].split("-", 1)
+            drones = max(drones, int(drone_id))
+            if target in graph.zones:
+                if graph.zones[target].is_priority:
+                    priority_visits += 1
+            else:
+                restricted_crossings += 1
+
+    print(f"Drones: {drones}")
+    print(f"Turns: {len(log)}")
+    print(f"Restricted-zone crossings: {restricted_crossings}")
+    print(f"Priority-zone visits: {priority_visits}")
