@@ -56,9 +56,9 @@ class MapParser:
 
         for name, zone in self.graph.zones.items():
             if not zone.is_start and not zone.is_end and len(
-                    self.graph.neighbors(name)) < 2:
+                    self.graph.neighbors(name)) < 1:
                 self.error(
-                    f"zone '{name}' must connect to at least two other zones")
+                    f"zone '{name}' must connect to at least one other zone")
         if not self.graph.connected():
             self.error("map graph is disconnected: some zones are unreachable")
 
