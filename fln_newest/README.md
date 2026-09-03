@@ -156,12 +156,6 @@ make install
 python3 main.py maps/easy/01_linear_path.txt
 ```
 
-Terminal-only:
-
-```bash
-python3 main.py --no-visual maps/easy/01_linear_path.txt
-```
-
 Via the Makefile:
 
 ```bash
