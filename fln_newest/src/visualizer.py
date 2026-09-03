@@ -387,25 +387,3 @@ def show_simulation(graph: Graph, log: list[str]) -> None:
     """Open the graphical simulation."""
     Visualizer(graph, log)
     arcade.run()
-
-
-def print_summary(graph: Graph, log: list[str]) -> None:
-    """Print a short terminal summary instead of the raw per-turn log:
-    how many drones, how many turns, and a couple of notable counts."""
-    drones = 0
-    restricted_crossings = 0
-    priority_visits = 0
-    for line in log:
-        for token in line.split():
-            drone_id, target = token[1:].split("-", 1)
-            drones = max(drones, int(drone_id))
-            if target in graph.zones:
-                if graph.zones[target].is_priority:
-                    priority_visits += 1
-            else:
-                restricted_crossings += 1
-
-    print(f"Drones: {drones}")
-    print(f"Turns: {len(log)}")
-    print(f"Restricted-zone crossings: {restricted_crossings}")
-    print(f"Priority-zone visits: {priority_visits}")

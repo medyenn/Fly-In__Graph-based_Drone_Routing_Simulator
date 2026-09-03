@@ -10,7 +10,7 @@ from graph import Drone
 from parser import MapParseError, MapParser
 from pathfinder import PathFinder
 from simulator import SimulationError, Simulator
-from visualizer import print_summary, show_simulation
+from visualizer import show_simulation
 
 
 class Pipeline:
@@ -26,10 +26,6 @@ class Pipeline:
             description="Route a fleet of drones through a Fly-In map."
         )
         parser.add_argument("map", type=Path, help="path to the map file")
-        parser.add_argument(
-            "--no-visual",
-            action="store_true",
-            help="skip the graphical window and only print the summary")
         return cls(parser.parse_args(argv))
 
     def run(self) -> int:
@@ -50,9 +46,9 @@ class Pipeline:
             ]
             log = Simulator(graph, drones).run()
 
-            print_summary(graph, log)
-            if not self.args.no_visual:
-                show_simulation(graph, log)
+            for line in log:
+                print(line)
+            show_simulation(graph, log)
             return 0
         except MapParseError as e:
             print(e, file=sys.stderr)
