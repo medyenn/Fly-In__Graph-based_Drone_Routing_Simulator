@@ -1,130 +1,389 @@
-"""Visualizer: colored terminal feedback layered on top of Simulator's log.
-This class wraps each token in ANSI color codes based on
-the zone it refers to. Strip the escape codes back out."""
+"""Arcade visualizer for the Fly-In simulation."""
 
 from __future__ import annotations
+import math
+import arcade
 
-import sys
-from typing import Optional
-
-from domain import Zone
 from graph import Graph
 
-RESET = "\033[0m"
-BOLD = "\033[1m"
+WIDTH = 1400
+HEIGHT = 750
+MARGIN = 120
+MOVE_R = 12
+MOVE_TIME = 0.6
+HOLD_TIME = 0.9
+ROTATION = math.pi / 2
 
-# 256-color codes, since the map files use names (orange, purple, gold,
-# maroon, crimson...) that plain 8-color ANSI can't represent. "black" is
-# remapped to a dark gray so it stays visible on a black terminal
-# background; anything unrecognized (e.g. "rainbow") falls back to
-# DEFAULT_CODE rather than raising - a cosmetic layer should never crash
-# the simulation over an unusual color name.
-COLOR_CODES = {
-    "black": 235,
-    "white": 255,
-    "gray": 244,
-    "grey": 244,
-    "red": 196,
-    "green": 46,
-    "yellow": 226,
-    "blue": 33,
-    "magenta": 201,
-    "cyan": 51,
-    "orange": 208,
-    "purple": 129,
-    "brown": 94,
-    "lime": 118,
-    "gold": 220,
-    "maroon": 88,
-    "darkred": 124,
-    "crimson": 161,
-    "violet": 177,
+BG = (16, 20, 28)
+LINE = (70, 76, 90)
+LINE_ACTIVE = (99, 179, 237)
+TEXT = (230, 233, 240)
+WHITE = (245, 246, 250)
+
+TYPE_COLOR = {
+    "normal": (120, 126, 138),
+    "priority": (52, 211, 153),
+    "restricted": (167, 139, 250),
+    "blocked": (60, 64, 74),
 }
-DEFAULT_CODE = 250
+NAMED_COLOR = {
+    "red": (239, 68, 68), "green": (34, 197, 94), "blue": (59, 130, 246),
+    "yellow": (250, 204, 21), "orange": (249, 115, 22),
+    "purple": (168, 85, 247), "gray": (120, 126, 138),
+    "grey": (120, 126, 138), "cyan": (45, 212, 191),
+}
+START_COLOR = (56, 189, 248)
+END_COLOR = (250, 204, 21)
 
 
-class Visualizer:
-    """Renders Simulator output and a pre-run map legend, in color."""
+def ngon_point(
+    cx: float, cy: float, radius: float, angle: float, sides: int,
+    rotation: float = ROTATION,
+) -> tuple[float, float]:
+    """A point on a regular polygon's edge at a given angle from its center
+    (the angle does not need to land exactly on a corner)."""
+    seg = 2 * math.pi / sides
+    local = ((angle - rotation + seg / 2) % seg) - seg / 2
+    r = radius * math.cos(seg / 2) / math.cos(local)
+    return cx + r * math.cos(angle), cy + r * math.sin(angle)
 
-    def __init__(self, graph: Graph, use_color: Optional[bool] = None) -> None:
+
+def ngon_vertices(
+    cx: float, cy: float, radius: float, sides: int,
+    rotation: float = ROTATION,
+) -> list[tuple[float, float]]:
+    """The `sides` corner points of a regular polygon."""
+    step = 2 * math.pi / sides
+    return [
+        ngon_point(cx, cy, radius, rotation + i * step, sides, rotation)
+        for i in range(sides)
+    ]
+
+
+class TextPool:
+    """Reuse arcade.Text objects instead of creating one every frame."""
+
+    def __init__(self) -> None:
+        self.items: dict[str, arcade.Text] = {}
+
+    def draw(
+        self, key: str, text: str, x: float, y: float,
+        color: tuple[int, int, int], size: int,
+        anchor_x: str = "left", bold: bool = False,
+    ) -> None:
+        item = self.items.get(key)
+        if item is None:
+            item = arcade.Text(
+                text, x, y, color, size, anchor_x=anchor_x, bold=bold)
+            self.items[key] = item
+        else:
+            item.text, item.x, item.y, item.color = text, x, y, color
+        item.draw()
+
+
+class Visualizer(arcade.Window):
+    """Play back a Fly-In simulation log over its graph."""
+
+    def __init__(self, graph: Graph, log: list[str]) -> None:
+        super().__init__(WIDTH, HEIGHT, "Fly-In", resizable=True)
+        arcade.set_background_color(BG)  # type: ignore[arg-type]
         self.graph = graph
-        # Auto-disable color when stdout isn't a terminal (piped/redirected)
-        # so logs and captured output stay clean plain text.
-        self.use_color = sys.stdout.isatty() if use_color is None else use_color
-        self._token_targets = self._build_token_targets()
+        self.log = log
+        self.zoom, self.origin = self.fit()
+        self.cam = [0.0, 0.0]
 
-    def _build_token_targets(self) -> dict[str, Zone]:
-        """Map every zone name AND restricted connection name to its Zone.
+        self.turn = 0
+        self.timer = 0.0
+        self.holding = False
+        self.paused = False
 
-        A connection only ever appears as an output token while a drone is
-        mid-transit toward a *restricted* zone, so a connection token is
-        always colored using that restricted destination.
-        """
-        targets: dict[str, Zone] = {}
-        for zone in self.graph.zones.values():
-            targets[zone.name] = zone
-        for connection in self.graph.connections:
-            if connection.zone_a.is_restricted:
-                targets[connection.name] = connection.zone_a
-            elif connection.zone_b.is_restricted:
-                targets[connection.name] = connection.zone_b
-        return targets
+        self.zone_of = self.start_positions()
+        self.pos = {d: self.layout(z) for d, z in self.zone_of.items()}
+        self.moves: dict[
+            int, tuple[tuple[float, float], tuple[float, float], str | None]
+        ] = {}
+        self.midway: set[int] = set()
+        self.edge_of: dict[int, tuple[str, str]] = {}
+        self.zone_r = 20
+        self.labels = TextPool()
+        self.zone_number = {
+            name: i for i, name in enumerate(self.graph.zones, 1)}
 
-    def _wrap(self, text: str, color_name: Optional[str]) -> str:
-        """Wrap text in an ANSI color, or return it unchanged."""
-        if not self.use_color or color_name is None:
-            return text
-        code = COLOR_CODES.get(color_name.lower(), DEFAULT_CODE)
-        return f"\033[38;5;{code}m{text}{RESET}"
+    # ---- setup -----------------------------------------------------
 
-    def _colorize_token(self, token: str) -> str:
-        """Colorize one 'D<id>-<zone_or_connection>' token in place."""
-        _drone_part, _, rest = token.partition("-")
-        zone = self._token_targets.get(rest)
-        if zone is None:
-            return token
-        return self._wrap(token, zone.color)
+    def fit(self) -> tuple[tuple[float, float], tuple[float, float]]:
+        """Independent X/Y scales that stretch the map to fill the window."""
+        zones = list(self.graph.zones.values())
+        xs = [z.x for z in zones] or [0]
+        ys = [z.y for z in zones] or [0]
+        span_x = max(max(xs) - min(xs), 1)
+        span_y = max(max(ys) - min(ys), 1)
+        sx = (self.width - 2 * MARGIN) / span_x
+        sy = (self.height - 2 * MARGIN) / span_y
+        return (sx, sy), (MARGIN - min(xs) * sx, MARGIN - min(ys) * sy)
 
-    def colorize_line(self, line: str) -> str:
-        """Return line with each token colorized; pure, no printing."""
-        if not line:
-            return line
-        return " ".join(self._colorize_token(token) for token in line.split())
+    def layout(self, zone_name: str) -> tuple[float, float]:
+        """World position of a zone, before the camera pan is applied."""
+        zone = self.graph.zones[zone_name]
+        sx, sy = self.zoom
+        ox, oy = self.origin
+        return zone.x * sx + ox, zone.y * sy + oy
 
-    def render_turn(self, turn_number: int, line: str) -> None:
-        """Print one turn's line, colorized. turn_number is for callers
-        that want to correlate with Simulator.log; it is not printed, so
-        the visible output still matches the required format exactly
-        once ANSI codes are stripped."""
-        del turn_number  # not rendered; kept for interface symmetry
-        print(self.colorize_line(line))
+    def place(self, x: float, y: float) -> tuple[float, float]:
+        """Apply the current camera pan to a world position."""
+        return x + self.cam[0], y + self.cam[1]
 
-    def render_map(self) -> None:
-        """Print a static legend of zones and connections before the run."""
-        print(self._heading("Map layout"))
-        for zone in sorted(self.graph.zones.values(), key=lambda z: (z.x, z.y)):
-            role = " (start)" if zone.is_start else " (end)" if zone.is_end else ""
-            capacity = "unlimited" if zone.max_drones is None else str(zone.max_drones)
-            name = self._wrap(zone.name, zone.color)
-            print(
-                f"  {name:<20} pos=({zone.x},{zone.y}) "
-                f"type={zone.zone_type:<10} capacity={capacity}{role}"
+    def screen_pos(self, zone_name: str) -> tuple[float, float]:
+        """Screen position of a zone: world layout plus the camera pan."""
+        return self.place(*self.layout(zone_name))
+
+    def start_positions(self) -> dict[int, str]:
+        """Every drone begins the replay parked at the start hub."""
+        if self.graph.start is None:
+            return {}
+        highest = 0
+        for line in self.log:
+            for token in line.split():
+                highest = max(highest, int(token[1:].split("-", 1)[0]))
+        return {d: self.graph.start.name for d in range(1, highest + 1)}
+
+    # ---- turn playback ----------------------------------------------
+
+    def start_turn(self) -> None:
+        """Begin animating every drone movement listed in this turn."""
+        self.moves.clear()
+        for token in self.log[self.turn].split():
+            drone_id = int(token[1:].split("-", 1)[0])
+            target = token.split("-", 1)[1]
+            start = self.pos[drone_id]
+            if target in self.graph.zones:
+                self.moves[drone_id] = (start, self.layout(target), target)
+                self.midway.discard(drone_id)
+            else:
+                a, b = target.split("-", 1)
+                pa, pb = self.layout(a), self.layout(b)
+                mid = ((pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2)
+                self.moves[drone_id] = (start, mid, None)
+                self.midway.add(drone_id)
+                self.edge_of[drone_id] = (a, b)
+
+    def finish_turn(self) -> None:
+        """Land every animated drone and advance to the next turn."""
+        for drone_id, (_, end, target) in self.moves.items():
+            self.pos[drone_id] = end
+            if target is not None:
+                self.zone_of[drone_id] = target
+        self.moves.clear()
+        self.turn += 1
+        self.timer = 0.0
+        self.holding = False
+
+    def goto(self, turn: int) -> None:
+        """Jump straight to the end of a given turn, no animation. Used by
+        the manual step-forward/step-backward controls while paused."""
+        turn = max(0, min(turn, len(self.log)))
+        self.reset()
+        for _ in range(turn):
+            self.start_turn()
+            self.finish_turn()
+
+    def arrived(self) -> dict[int, str]:
+        """Drones that finished animating into a zone this turn: they merge
+        into that zone's wedge instead of floating above it."""
+        if not self.holding:
+            return {}
+        return {
+            drone_id: target for drone_id, (_, _, target) in self.moves.items()
+            if target is not None
+        }
+
+    def reset(self) -> None:
+        """Restart the replay from the very first turn."""
+        self.turn = 0
+        self.timer = 0.0
+        self.holding = False
+        self.zone_of = self.start_positions()
+        self.pos = {d: self.layout(z) for d, z in self.zone_of.items()}
+        self.moves.clear()
+        self.midway.clear()
+
+    def drone_screen_pos(self, drone_id: int) -> tuple[float, float]:
+        """Interpolated screen position of a drone mid-animation."""
+        start, end, _ = self.moves[drone_id]
+        t = 1.0 if self.holding else min(self.timer / MOVE_TIME, 1.0)
+        return self.place(
+            start[0] + (end[0] - start[0]) * t,
+            start[1] + (end[1] - start[1]) * t,
+        )
+
+    # ---- update & input -----------------------------------------------
+
+    def on_update(self, dt: float) -> None:
+        if self.paused or self.turn >= len(self.log):
+            return
+
+        if not self.moves and not self.holding:
+            self.start_turn()
+        self.timer += dt
+        if not self.holding and self.timer >= MOVE_TIME:
+            self.timer, self.holding = 0.0, True
+        elif self.holding and self.timer >= HOLD_TIME:
+            self.finish_turn()
+
+    def on_key_press(self, key: int, modifiers: int) -> None:
+        if key == arcade.key.SPACE:
+            self.paused = not self.paused
+        elif key == arcade.key.R:
+            self.reset()
+        elif self.paused and key == arcade.key.RIGHT:
+            self.goto(self.turn + 1)
+        elif self.paused and key == arcade.key.LEFT:
+            self.goto(self.turn - 1)
+
+    def on_mouse_drag(
+        self, x: float, y: float, dx: float, dy: float,
+        buttons: int, modifiers: int,
+    ) -> None:
+        self.cam[0] += dx
+        self.cam[1] += dy
+
+    def on_resize(self, width: int, height: int) -> None:
+        super().on_resize(width, height)
+        self.zone_r = (
+            ((self.width / (2500 + self.width))
+                + (self.height / (1500 + self.height))) * 20)
+        self.zoom, self.origin = self.fit()
+
+    # ---- drawing -----------------------------------------------------
+
+    def on_draw(self) -> None:
+        self.clear()
+        self.draw_connections()
+        self.draw_zones()
+        self.draw_moving_drones()
+        self.draw_hud()
+
+    def draw_connections(self) -> None:
+        """Draw every edge, highlighting the ones currently in use."""
+        active = {
+            frozenset(self.edge_of[d])
+            for d in self.midway if d in self.edge_of
+        }
+        for conn in self.graph.connections:
+            a = self.screen_pos(conn.zone_a.name)
+            b = self.screen_pos(conn.zone_b.name)
+            is_active = (
+                frozenset((conn.zone_a.name, conn.zone_b.name)) in active)
+            color, width = (LINE_ACTIVE, 3) if is_active else (LINE, 2)
+            arcade.draw_line(*a, *b, color, width)
+
+    def draw_zones(self) -> None:
+        """Draw every zone as a hexagon (pentagon for start/end): a type
+        letter when empty, drone wedges once occupied."""
+        moving = set(self.moves)
+        arrived = self.arrived()
+        for name, idx in self.zone_number.items():
+            zone = self.graph.zones[name]
+            x, y = self.screen_pos(name)
+            ring = self.zone_color(zone)
+            sides = 5 if (zone.is_start or zone.is_end) else 6
+            arcade.draw_polygon_outline(
+                ngon_vertices(x, y, self.zone_r + 2, sides), ring, 2)
+
+            occupants = sorted(
+                [
+                    d
+                    for d, z in self.zone_of.items()
+                    if z == name and d not in moving]
+                + [d for d, z in arrived.items() if z == name]
             )
+            if occupants:
+                self.draw_occupants(x, y, sides, occupants)
+            else:
+                fill = tuple(max(c // 5, 20) for c in ring)
+                arcade.draw_polygon_filled(
+                    ngon_vertices(x, y, self.zone_r, sides),
+                    fill)  # type: ignore[arg-type]
+                letter = ("S" if zone.is_start else
+                          "E" if zone.is_end else
+                          zone.zone_type[0].upper())
+                self.labels.draw(
+                    f"letter-{name}", letter, x, y - 8, ring, 16,
+                    anchor_x="center", bold=True)
 
-        print()
-        print(self._heading("Connections"))
-        for connection in self.graph.connections:
-            print(f"  {connection.name:<30} capacity={connection.max_link_capacity}")
+            label_y = y + self.zone_r + 18 if idx % 2 else y - self.zone_r - 18
+            self.labels.draw(
+                f"name-{name}", name, x, label_y, TEXT, 9, anchor_x="center")
 
-    def render_summary(self, total_turns: int, nb_drones: int) -> None:
-        """Print a short final report once the simulation has finished."""
-        print(self._heading("Simulation complete"))
-        print(f"  total turns : {total_turns}")
-        print(f"  drones      : {nb_drones}")
-        if total_turns:
-            print(f"  drones/turn : {nb_drones / total_turns:.2f}")
+    def draw_occupants(
+        self, x: float, y: float, sides: int, drones: list[int]
+    ) -> None:
+        """Split the zone polygon into one wedge per occupying drone."""
+        n = len(drones)
+        step = 2 * math.pi / n
+        for i in range(n):
+            a0, a1 = i * step, (i + 1) * step
+            samples = max(2, int(math.degrees(step) / 10))
+            arc = [
+                ngon_point(
+                    x, y, self.zone_r, a0 + (a1 - a0) * k / samples, sides)
+                for k in range(samples + 1)
+            ]
+            arcade.draw_polygon_filled([(x, y), *arc], WHITE)
+        for i in range(n if n > 1 else 0):
+            ax, ay = ngon_point(x, y, self.zone_r, i * step, sides)
+            arcade.draw_line(x, y, ax, ay, BG, 2)
+        if n <= 6:
+            r = self.zone_r * 0.55 if n > 1 else 0
+            for i, drone_id in enumerate(drones):
+                mid = (i + 0.5) * step
+                self.labels.draw(
+                    f"d{drone_id}", f"D{drone_id}",
+                    x + r * math.cos(mid), y + r * math.sin(mid) - 6,
+                    BG, 10, anchor_x="center", bold=True,
+                )
 
-    def _heading(self, text: str) -> str:
-        if not self.use_color:
-            return text
-        return f"{BOLD}{text}{RESET}"
+    def draw_moving_drones(self) -> None:
+        """Draw drones still traveling: not yet merged into a zone's wedge."""
+        arrived = self.arrived()
+        for drone_id in self.moves:
+            if drone_id in arrived:
+                continue
+            x, y = self.drone_screen_pos(drone_id)
+            arcade.draw_circle_filled(x, y, MOVE_R, WHITE)
+            arcade.draw_circle_outline(x, y, MOVE_R + 1, BG, 2)
+            self.labels.draw(
+                f"d{drone_id}", f"D{drone_id}", x, y - 5, BG, 9,
+                anchor_x="center", bold=True)
+
+    def draw_hud(self) -> None:
+        self.labels.draw(
+            "title", "FLY-IN", 30, self.height - 40, TEXT, 20, bold=True)
+        status = "paused" if self.paused else "running"
+        self.labels.draw(
+            "status",
+            f"turn {min(self.turn + 1, len(self.log))}/{len(self.log)} "
+            f" {status}", self.width - 260, self.height - 38, TEXT, 13,)
+        self.labels.draw(
+            "controls",
+            "space: pause   left/right: step turn (while paused)   "
+            "drag: pan   r: replay",
+            30, 28, TEXT, 12)
+
+    def zone_color(  # type: ignore[no-untyped-def]
+            self,
+            zone) -> tuple[int, int, int]:
+        """Ring color: role first (start/end), then custom color, then type."""
+        if zone.is_start:
+            return START_COLOR
+        if zone.is_end:
+            return END_COLOR
+        if zone.color:
+            return NAMED_COLOR.get(zone.color.lower(), TYPE_COLOR["normal"])
+        return TYPE_COLOR[zone.zone_type]
+
+
+def show_simulation(graph: Graph, log: list[str]) -> None:
+    """Open the graphical simulation."""
+    Visualizer(graph, log)
+    arcade.run()

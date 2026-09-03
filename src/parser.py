@@ -1,18 +1,19 @@
-"""Parser for Fly-In map description files.
-Turns the map's text format into a validated Graph and drone count."""
+"""Parser for Fly-In map description files. Turns the map's
+text format into a validated Graph and drone count."""
 
 from __future__ import annotations
-
 from pathlib import Path
 from typing import NoReturn
 
-from domain import Connection, Zone
-from graph import Graph
+from graph import Graph, Connection, Zone
 
 ALLOWED_ZONE_TYPES = {"normal", "priority", "restricted", "blocked"}
+ALLOWED_COLORS = {
+    "red", "green", "blue", "yellow", "orange",
+    "purple", "gray", "grey", "cyan"}
 ZONE_METADATA_KEYS = {"zone", "color", "max_drones"}
 CONNECTION_METADATA_KEYS = {"max_link_capacity"}
-ZONE_PREFIXES = ("start_hub:", "end_hub:", "hub:")
+ZONE_KEYWORDS = {"start_hub", "end_hub", "hub"}
 
 
 class MapParseError(Exception):
@@ -36,12 +37,13 @@ class MapParser:
         self.start_seen = False
         self.end_seen = False
         self.connection_keys: set[frozenset[str]] = set()
+        self.coordinates: set[tuple[int, int]] = set()
 
     def parse(self) -> tuple[Graph, int]:
         """Read map_path fully; return (graph, nb_drones) or raise."""
         with self.map_path.open(encoding="utf-8") as handle:
             for self.line_number, raw_line in enumerate(handle, start=1):
-                line = self.strip_comment(raw_line)
+                line = raw_line.split("#", 1)[0].strip()
                 if line:
                     self.dispatch_line(line)
 
@@ -52,12 +54,24 @@ class MapParser:
         if not self.end_seen:
             self.error("map must define exactly one end_hub")
 
+        for name, zone in self.graph.zones.items():
+            if not zone.is_start and not zone.is_end and len(
+                    self.graph.neighbors(name)) < 1:
+                self.error(
+                    f"zone '{name}' must connect to at least one other zone")
+        if not self.graph.connected():
+            self.error("map graph is disconnected: some zones are unreachable")
+
         return self.graph, self.nb_drones
 
     def dispatch_line(self, line: str) -> None:
         """Route one non-empty, comment-stripped line to its handler."""
-        if line.startswith("nb_drones:"):
-            self.nb_drones = self.parse_drone_count(line)
+        key, _, remainder = line.partition(":")
+        key = key.strip()
+
+        if key == "nb_drones":
+            self.nb_drones = self.validate_positive_int(
+                remainder.strip(), "nb_drones")
             self.drone_count_seen = True
             return
 
@@ -67,33 +81,22 @@ class MapParser:
                 "'nb_drones: <count>'"
             )
 
-        for prefix in ZONE_PREFIXES:
-            if line.startswith(prefix):
-                kind = prefix[:-1]
-                self.parse_zone_line(line[len(prefix):], kind)
-                return
+        if key in ZONE_KEYWORDS:
+            self.parse_zone_line(remainder, key)
+            return
 
-        if line.startswith("connection:"):
-            self.parse_connection_line(line[len("connection:"):])
+        if key == "connection":
+            self.parse_connection_line(remainder)
             return
 
         self.error(f"unrecognized line type: '{line}'")
-
-    def strip_comment(self, line: str) -> str:
-        """Drop everything from '#' onward, then strip whitespace."""
-        return line.split("#", 1)[0].strip()
-
-    def parse_drone_count(self, line: str) -> int:
-        """Parse and validate the 'nb_drones: <int>' line."""
-        _, _, value = line.partition(":")
-        return self.validate_positive_int(value.strip(), "nb_drones")
 
     def parse_zone_line(self, remainder: str, kind: str) -> None:
         """Parse a start_hub/end_hub/hub line body (after the prefix)."""
         head, meta_raw = self.split_metadata(remainder)
         tokens = head.split()
         if len(tokens) != 3:
-            self.error("expected '<name> <x> <y>' after zone prefix")
+            self.error("expected '<n> <x> <y>' after zone prefix")
         name, x_str, y_str = tokens
 
         if "-" in name:
@@ -103,41 +106,44 @@ class MapParser:
 
         x = self.validate_integer(x_str, "x coordinate")
         y = self.validate_integer(y_str, "y coordinate")
+        if (x, y) in self.coordinates:
+            self.error(f"zone '{name}' overlaps another zone at ({x}, {y})")
+        self.coordinates.add((x, y))
 
         metadata = self.parse_metadata(meta_raw, ZONE_METADATA_KEYS)
-
         zone_type = metadata.get("zone", "normal")
         self.validate_zone_type(zone_type)
 
-        max_drones_raw = metadata.get("max_drones", "1")
-        max_drones: int | None = self.validate_positive_int(
-            max_drones_raw, "max_drones"
-        )
+        max_drones = self.validate_positive_int(
+            metadata.get("max_drones", "1"), "max_drones")
         color = metadata.get("color")
+        if color is not None and color not in ALLOWED_COLORS:
+            color = None
 
         if kind == "start_hub":
             if self.start_seen:
                 self.error("only one start_hub is allowed")
+            if zone_type == "blocked":
+                self.error("start_hub cannot be a blocked zone")
             self.start_seen = True
             max_drones = None
         elif kind == "end_hub":
             if self.end_seen:
                 self.error("only one end_hub is allowed")
+            if zone_type == "blocked":
+                self.error("end_hub cannot be a blocked zone")
             self.end_seen = True
             max_drones = None
 
         zone = Zone(
-            name=name,
-            x=x,
-            y=y,
-            zone_type=zone_type,
-            color=color,
-            max_drones=max_drones,
-        )
+            name=name, x=x, y=y, zone_type=zone_type, color=color,
+            max_drones=max_drones)
         self.graph.add_zone(zone)
         if kind == "start_hub":
+            zone.is_start = True
             self.graph.start = zone
         elif kind == "end_hub":
+            zone.is_end = True
             self.graph.end = zone
 
     def parse_connection_line(self, remainder: str) -> None:
@@ -166,10 +172,7 @@ class MapParser:
         )
 
         connection = Connection(
-            zone_a=self.graph.zones[name_a],
-            zone_b=self.graph.zones[name_b],
-            max_link_capacity=capacity,
-        )
+            self.graph.zones[name_a], self.graph.zones[name_b], capacity)
         self.graph.add_connection(connection)
 
     def split_metadata(self, remainder: str) -> tuple[str, str]:
@@ -183,33 +186,27 @@ class MapParser:
         return remainder[:start].strip(), remainder[start + 1:end].strip()
 
     def parse_metadata(
-        self, raw: str, allowed_keys: set[str]
-    ) -> dict[str, str]:
+            self, raw: str, allowed_keys: set[str]) -> dict[str, str]:
         """Parse a '[key=value ...]' body, enforcing allowed_keys."""
         metadata: dict[str, str] = {}
-        if not raw:
-            return metadata
-
         for token in raw.split():
             if token.count("=") != 1:
                 self.error(f"malformed metadata token '{token}'")
             key, value = token.split("=", 1)
             if key not in allowed_keys:
-                self.error(
-                    f"unknown metadata key '{key}' for this line type"
-                )
+                self.error(f"unknown metadata key '{key}' for this line type")
+            if not value:
+                self.error(f"metadata key '{key}' is missing a value")
             if key in metadata:
                 self.error(f"duplicate metadata key '{key}'")
             metadata[key] = value
-
         return metadata
 
-    def validate_zone_type(self, value: str) -> str:
+    def validate_zone_type(self, value: str) -> None:
         """Ensure value is one of the four legal zone types."""
         if value not in ALLOWED_ZONE_TYPES:
             allowed = ", ".join(sorted(ALLOWED_ZONE_TYPES))
             self.error(f"'zone' must be one of: {allowed} (got '{value}')")
-        return value
 
     def validate_integer(self, value: str, field_name: str) -> int:
         """Parse value as an int, or raise naming field_name."""
@@ -223,8 +220,7 @@ class MapParser:
         parsed = self.validate_integer(value, field_name)
         if parsed <= 0:
             self.error(
-                f"{field_name} must be a positive integer (got {parsed})"
-            )
+                f"{field_name} must be a positive integer (got {parsed})")
         return parsed
 
     def error(self, message: str) -> NoReturn:

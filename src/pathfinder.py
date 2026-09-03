@@ -1,92 +1,156 @@
-"""PathFinder: cheapest, priority-aware route for a single drone.
-Given a start and an end zone name, return the cheapest
-path, preferring routes that touch more priority zones."""
+"""Reservation-aware Dijkstra path finder for Fly-In."""
 
 from __future__ import annotations
-
 import heapq
 import math
 from typing import Optional
 
 from graph import Graph
 
+State = tuple[str, int]
+
 
 class PathFinder:
-    """Self-written Dijkstra over a Graph, with a priority-zone tie-break."""
+    """Find and reserve one time-aware shortest path per drone."""
 
     def __init__(self, graph: Graph) -> None:
         self.graph = graph
+        self.zone_reservations: dict[tuple[str, int], int] = {}
+        self.link_reservations: dict[tuple[str, str, int], int] = {}
+
+    def zone_available(self, name: str, turn: int) -> bool:
+        """Whether name still has a free slot at turn, given reservations."""
+        zone = self.graph.get_zone(name)
+        if zone.is_end or zone.max_drones is None:
+            return True
+        return self.zone_reservations.get((name, turn), 0) < zone.max_drones
+
+    def link_available(
+        self, name_a: str, name_b: str,
+            capacity: int, start_turn: int, end_turn: int) -> bool:
+        """Whether the connection between name_a/name_b is free for every
+        turn in [start_turn, end_turn)."""
+        z1, z2 = sorted((name_a, name_b))
+        for turn in range(start_turn, end_turn):
+            if self.link_reservations.get((z1, z2, turn), 0) >= capacity:
+                return False
+        return True
 
     def find_path(self, start_name: str, end_name: str) -> Optional[list[str]]:
-        """Return the cheapest route from start_name to end_name.
+        """Find the best path while respecting current reservations."""
+        if not self.graph.reachable(start_name, end_name):
+            return None
 
-        Cost of entering a zone is its entry_cost() (1 for normal/priority,
-        2 for restricted); blocked zones are never traversable. Among
-        equal-cost routes, the one passing through more priority zones
-        wins. Returns None if end_name is unreachable from start_name.
-        """
-        start = self.graph.get_zone(start_name)
-
-        # Best known (cost, priority_count) reaching each zone so far.
-        best_cost: dict[str, float] = {start_name: 0}
-        best_priority: dict[str, int] = {
-            start_name: 1 if start.is_priority else 0
-        }
-        came_from: dict[str, str] = {}
-        visited: set[str] = set()
-
-        # Heap items: (cost, -priority_count, zone_name). Cost sorts first;
-        # among equal cost, higher priority_count (i.e. more negative)
-        # sorts first; zone_name only breaks a true tie deterministically.
-        heap: list[tuple[int, int, str]] = [
-            (0, -best_priority[start_name], start_name)
-        ]
+        start_state = (start_name, 0)
+        distances: dict[State, tuple[int, int]] = {start_state: (0, 0)}
+        parents: dict[State, Optional[State]] = {start_state: None}
+        heap: list[tuple[int, int, int, str, int]] = [(0, 0, 0, start_name, 0)]
+        visited: set[State] = set()
+        wait_limit = max(100, len(self.graph.zones) * 20)
+        counter = 0
 
         while heap:
-            cost, neg_priority, name = heapq.heappop(heap)
-            if name in visited:
+            cost, neg_priority, _, name, turn = heapq.heappop(heap)
+            state = (name, turn)
+            if state in visited:
                 continue
-            visited.add(name)
+            visited.add(state)
 
             if name == end_name:
-                return self._reconstruct_path(came_from, start_name, end_name)
+                schedule = self.build_schedule(parents, state)
+                self.reserve_schedule(schedule)
+                return self.names(schedule)
 
             zone = self.graph.get_zone(name)
-            priority_count = -neg_priority
+            priority = -neg_priority
 
             for connection in self.graph.neighbors(name):
                 neighbor = connection.other_end(zone)
-                entry_cost = neighbor.entry_cost()
-                if entry_cost is None:
-                    continue  # blocked: never a valid step
+                move_cost = neighbor.entry_cost()
+                if move_cost is None:
+                    continue
 
-                candidate_cost = cost + entry_cost
-                candidate_priority = priority_count + (
-                    1 if neighbor.is_priority else 0
-                )
-                candidate_key = (candidate_cost, -candidate_priority)
+                arrival = turn + move_cost
+                if not self.zone_available(neighbor.name, arrival):
+                    continue
+                if not self.link_available(
+                        name, neighbor.name,
+                        connection.max_link_capacity, turn, arrival):
+                    continue
 
-                existing_key = (
-                    best_cost.get(neighbor.name, math.inf),
-                    -best_priority.get(neighbor.name, -1),
-                )
-                if candidate_key < existing_key:
-                    best_cost[neighbor.name] = candidate_cost
-                    best_priority[neighbor.name] = candidate_priority
-                    came_from[neighbor.name] = name
-                    heapq.heappush(
-                        heap, (
-                            candidate_cost, -candidate_priority, neighbor.name)
-                    )
+                next_state = (neighbor.name, arrival)
+                next_priority = priority + (1 if neighbor.is_priority else 0)
+                candidate = (arrival, -next_priority)
+                if candidate >= distances.get(next_state, (math.inf, 0)):
+                    continue
 
-        return None  # end_name is unreachable from start_name
+                distances[next_state] = candidate
+                parents[next_state] = state
+                counter += 1
+                heapq.heappush(
+                    heap,
+                    (arrival, -next_priority, counter, neighbor.name, arrival))
 
-    def _reconstruct_path(
-        self, came_from: dict[str, str], start_name: str, end_name: str
-    ) -> list[str]:
-        """Walk the came-from map backward from end_name to start_name."""
-        path = [end_name]
-        while path[-1] != start_name:
-            path.append(came_from[path[-1]])
-        path.reverse()
-        return path
+            wait_state = (name, turn + 1)
+            wait_key = (turn + 1, -priority)
+            if turn < wait_limit and wait_key < distances.get(
+                    wait_state, (math.inf, 0)):
+                distances[wait_state] = wait_key
+                parents[wait_state] = state
+                counter += 1
+                heapq.heappush(
+                    heap, (turn + 1, -priority, counter, name, turn + 1))
+
+        return None
+
+    def get_drones_paths(self, nb_drones: int) -> list[list[str]]:
+        """Return one reservation-aware path for every drone."""
+        paths: list[list[str]] = []
+        if self.graph.start is None or self.graph.end is None:
+            return paths
+        for _ in range(nb_drones):
+            path = self.find_path(self.graph.start.name, self.graph.end.name)
+            if path is None:
+                break
+            paths.append(path)
+        return paths
+
+    def build_schedule(
+        self, parents: dict[State, Optional[State]], state: State
+    ) -> list[State]:
+        """Walk the came-from map back to the start, then reverse it."""
+        schedule: list[State] = []
+        current: Optional[State] = state
+        while current is not None:
+            schedule.append(current)
+            current = parents[current]
+        schedule.reverse()
+        return schedule
+
+    def names(self, schedule: list[State]) -> list[str]:
+        """Collapse a turn-stamped schedule into distinct consecutive zones."""
+        names: list[str] = []
+        for name, _ in schedule:
+            if not names or names[-1] != name:
+                names.append(name)
+        return names
+
+    def reserve_schedule(self, schedule: list[State]) -> None:
+        """Lock in every zone/link slot a schedule uses, for later drones."""
+        for index, (name, turn) in enumerate(schedule):
+            zone = self.graph.get_zone(name)
+            if not zone.is_start and not zone.is_end:
+                key = (name, turn)
+                self.zone_reservations[key] = self.zone_reservations.get(
+                    key, 0) + 1
+
+            if index + 1 >= len(schedule):
+                continue
+            next_name, next_turn = schedule[index + 1]
+            if name == next_name:
+                continue
+            z1, z2 = sorted((name, next_name))
+            for current_turn in range(turn, next_turn):
+                key = (z1, z2, current_turn)
+                self.link_reservations[key] = self.link_reservations.get(
+                    key, 0) + 1

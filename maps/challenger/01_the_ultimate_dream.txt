@@ -1,0 +1,620 @@
+nb_drones: 40
+
+start_hub: start 0 0 [color=green]
+hub: gate1_hell1 1 1 [color=red max_drones=1]
+hub: gate1_hell2 2 1 [color=red max_drones=1]
+hub: gate1_hell3 3 1 [color=red max_drones=1]
+hub: gate1_hell4 4 1 [color=red max_drones=1]
+hub: gate1_hell5 5 1 [color=red max_drones=1]
+hub: gate2_hell1 1 2 [color=red max_drones=1]
+hub: gate2_hell2 2 2 [color=red max_drones=1]
+hub: gate2_hell3 3 2 [color=red max_drones=1]
+hub: gate2_hell4 4 2 [color=red max_drones=1]
+hub: gate2_hell5 5 2 [color=red max_drones=1]
+hub: gate3_hell1 1 3 [color=red max_drones=1]
+hub: gate3_hell2 2 3 [color=red max_drones=1]
+hub: gate3_hell3 3 3 [color=red max_drones=1]
+hub: gate3_hell4 4 3 [color=red max_drones=1]
+hub: gate3_hell5 5 3 [color=red max_drones=1]
+hub: gate4_hell1 1 4 [color=red max_drones=1]
+hub: gate4_hell2 2 4 [color=red max_drones=1]
+hub: gate4_hell3 3 4 [color=red max_drones=1]
+hub: gate4_hell4 4 4 [color=red max_drones=1]
+hub: gate4_hell5 5 4 [color=red max_drones=1]
+hub: gate5_hell1 1 5 [color=red max_drones=1]
+hub: gate5_hell2 2 5 [color=red max_drones=1]
+hub: gate5_hell3 3 5 [color=red max_drones=1]
+hub: gate5_hell4 4 5 [color=red max_drones=1]
+hub: gate5_hell5 5 5 [color=red max_drones=1]
+hub: gate6_hell1 1 6 [color=red max_drones=1]
+hub: gate6_hell2 2 6 [color=red max_drones=1]
+hub: gate6_hell3 3 6 [color=red max_drones=1]
+hub: gate6_hell4 4 6 [color=red max_drones=1]
+hub: gate6_hell5 5 6 [color=red max_drones=1]
+hub: gate7_hell1 1 7 [color=red max_drones=1]
+hub: gate7_hell2 2 7 [color=red max_drones=1]
+hub: gate7_hell3 3 7 [color=red max_drones=1]
+hub: gate7_hell4 4 7 [color=red max_drones=1]
+hub: gate7_hell5 5 7 [color=red max_drones=1]
+hub: gate8_hell1 1 8 [color=red max_drones=1]
+hub: gate8_hell2 2 8 [color=red max_drones=1]
+hub: gate8_hell3 3 8 [color=red max_drones=1]
+hub: gate8_hell4 4 8 [color=red max_drones=1]
+hub: gate8_hell5 5 8 [color=red max_drones=1]
+hub: mazeA_r0c0 6 1 [zone=restricted color=brown]
+hub: mazeA_r0c1 7 1 [zone=restricted color=brown]
+hub: mazeA_r0c2 8 1 [zone=restricted color=brown]
+hub: mazeA_r0c3 9 1 [zone=restricted color=brown]
+hub: mazeA_r0c4 10 1 [zone=restricted color=brown]
+hub: mazeA_r0c5 11 1 [zone=restricted color=brown]
+hub: mazeA_r1c0 6 2 [zone=restricted color=brown]
+hub: mazeA_r1c1 7 2 [zone=restricted color=brown]
+hub: mazeA_r1c2 8 2 [zone=restricted color=brown]
+hub: mazeA_r1c3 9 2 [zone=restricted color=brown]
+hub: mazeA_r1c4 10 2 [zone=restricted color=brown]
+hub: mazeA_r1c5 11 2 [zone=restricted color=brown]
+hub: mazeA_r2c0 6 3 [zone=restricted color=brown]
+hub: mazeA_r2c1 7 3 [zone=restricted color=brown]
+hub: mazeA_r2c2 8 3 [zone=restricted color=brown]
+hub: mazeA_r2c3 9 3 [zone=restricted color=brown]
+hub: mazeA_r2c4 10 3 [zone=restricted color=brown]
+hub: mazeA_r2c5 11 3 [zone=restricted color=brown]
+hub: mazeA_r3c0 6 4 [zone=restricted color=brown]
+hub: mazeA_r3c1 7 4 [zone=restricted color=brown]
+hub: mazeA_r3c2 8 4 [zone=restricted color=brown]
+hub: mazeA_r3c3 9 4 [zone=restricted color=brown]
+hub: mazeA_r3c4 10 4 [zone=restricted color=brown]
+hub: mazeA_r3c5 11 4 [zone=restricted color=brown]
+hub: mazeA_r4c0 6 5 [zone=restricted color=brown]
+hub: mazeA_r4c1 7 5 [zone=restricted color=brown]
+hub: mazeA_r4c2 8 5 [zone=restricted color=brown]
+hub: mazeA_r4c3 9 5 [zone=restricted color=brown]
+hub: mazeA_r4c4 10 5 [zone=restricted color=brown]
+hub: mazeA_r4c5 11 5 [zone=restricted color=brown]
+hub: mazeA_r5c0 6 6 [zone=restricted color=brown]
+hub: mazeA_r5c1 7 6 [zone=restricted color=brown]
+hub: mazeA_r5c2 8 6 [zone=restricted color=brown]
+hub: mazeA_r5c3 9 6 [zone=restricted color=brown]
+hub: mazeA_r5c4 10 6 [zone=restricted color=brown]
+hub: mazeA_r5c5 11 6 [zone=restricted color=brown]
+hub: mazeB_r0c0 6 10 [zone=restricted color=purple]
+hub: mazeB_r0c1 7 10 [zone=restricted color=purple]
+hub: mazeB_r0c2 8 10 [zone=restricted color=purple]
+hub: mazeB_r0c3 9 10 [zone=restricted color=purple]
+hub: mazeB_r0c4 10 10 [zone=restricted color=purple]
+hub: mazeB_r0c5 11 10 [zone=restricted color=purple]
+hub: mazeB_r1c0 6 11 [zone=restricted color=purple]
+hub: mazeB_r1c1 7 11 [zone=restricted color=purple]
+hub: mazeB_r1c2 8 11 [zone=restricted color=purple]
+hub: mazeB_r1c3 9 11 [zone=restricted color=purple]
+hub: mazeB_r1c4 10 11 [zone=restricted color=purple]
+hub: mazeB_r1c5 11 11 [zone=restricted color=purple]
+hub: mazeB_r2c0 6 12 [zone=restricted color=purple]
+hub: mazeB_r2c1 7 12 [zone=restricted color=purple]
+hub: mazeB_r2c2 8 12 [zone=restricted color=purple]
+hub: mazeB_r2c3 9 12 [zone=restricted color=purple]
+hub: mazeB_r2c4 10 12 [zone=restricted color=purple]
+hub: mazeB_r2c5 11 12 [zone=restricted color=purple]
+hub: mazeB_r3c0 6 13 [zone=restricted color=purple]
+hub: mazeB_r3c1 7 13 [zone=restricted color=purple]
+hub: mazeB_r3c2 8 13 [zone=restricted color=purple]
+hub: mazeB_r3c3 9 13 [zone=restricted color=purple]
+hub: mazeB_r3c4 10 13 [zone=restricted color=purple]
+hub: mazeB_r3c5 11 13 [zone=restricted color=purple]
+hub: mazeB_r4c0 6 14 [zone=restricted color=purple]
+hub: mazeB_r4c1 7 14 [zone=restricted color=purple]
+hub: mazeB_r4c2 8 14 [zone=restricted color=purple]
+hub: mazeB_r4c3 9 14 [zone=restricted color=purple]
+hub: mazeB_r4c4 10 14 [zone=restricted color=purple]
+hub: mazeB_r4c5 11 14 [zone=restricted color=purple]
+hub: mazeB_r5c0 6 15 [zone=restricted color=purple]
+hub: mazeB_r5c1 7 15 [zone=restricted color=purple]
+hub: mazeB_r5c2 8 15 [zone=restricted color=purple]
+hub: mazeB_r5c3 9 15 [zone=restricted color=purple]
+hub: mazeB_r5c4 10 15 [zone=restricted color=purple]
+hub: mazeB_r5c5 11 15 [zone=restricted color=purple]
+hub: gate2_bridge 12 2 [color=teal max_drones=1]
+hub: gate4_bridge 12 4 [color=teal max_drones=1]
+hub: gate6_bridge 12 6 [color=teal max_drones=1]
+hub: gate8_bridge 12 8 [color=teal max_drones=1]
+hub: micro_gate1 14 1 [color=orange max_drones=1]
+hub: micro_gate2 14 2 [color=orange max_drones=1]
+hub: micro_gate3 14 3 [color=orange max_drones=1]
+hub: micro_gate4 14 4 [color=orange max_drones=1]
+hub: micro_gate5 14 5 [color=orange max_drones=1]
+hub: micro_gate6 14 6 [color=orange max_drones=1]
+hub: micro_gate7 14 7 [color=orange max_drones=1]
+hub: micro_gate8 14 8 [color=orange max_drones=1]
+hub: micro_gate9 14 9 [color=orange max_drones=1]
+hub: micro_gate10 14 10 [color=orange max_drones=1]
+hub: overflow_hell1 16 1 [zone=restricted color=maroon max_drones=2]
+hub: overflow_hell2 16 2 [zone=restricted color=maroon max_drones=2]
+hub: overflow_hell3 16 3 [zone=restricted color=maroon max_drones=2]
+hub: overflow_hell4 16 4 [zone=restricted color=maroon max_drones=2]
+hub: overflow_hell5 16 5 [zone=restricted color=maroon max_drones=2]
+hub: overflow_hell6 16 6 [zone=restricted color=maroon max_drones=2]
+hub: overflow_hell7 16 7 [zone=restricted color=maroon max_drones=2]
+hub: overflow_hell8 16 8 [zone=restricted color=maroon max_drones=2]
+hub: overflow_hell9 16 9 [zone=restricted color=maroon max_drones=2]
+hub: overflow_hell10 16 10 [zone=restricted color=maroon max_drones=2]
+hub: overflow_hell11 16 11 [zone=restricted color=maroon max_drones=2]
+hub: overflow_hell12 16 12 [zone=restricted color=maroon max_drones=2]
+hub: overflow_hell13 16 13 [zone=restricted color=maroon max_drones=2]
+hub: overflow_hell14 16 14 [zone=restricted color=maroon max_drones=2]
+hub: overflow_hell15 16 15 [zone=restricted color=maroon max_drones=2]
+hub: overflow_hell16 16 16 [zone=restricted color=maroon max_drones=2]
+hub: overflow_hell17 16 17 [zone=restricted color=maroon max_drones=2]
+hub: overflow_hell18 16 18 [zone=restricted color=maroon max_drones=2]
+hub: overflow_hell19 16 19 [zone=restricted color=maroon max_drones=2]
+hub: overflow_hell20 16 20 [zone=restricted color=maroon max_drones=2]
+hub: false_hope1 18 2 [zone=priority color=gold max_drones=4]
+hub: false_hope2 18 4 [zone=priority color=gold max_drones=4]
+hub: false_hope3 18 6 [zone=priority color=gold max_drones=3]
+hub: false_hope4 18 8 [zone=priority color=gold max_drones=3]
+hub: false_hope5 18 10 [zone=priority color=gold max_drones=3]
+hub: false_hope6 18 12 [zone=priority color=gold max_drones=2]
+hub: false_hope7 18 14 [zone=priority color=gold max_drones=2]
+hub: false_hope8 18 16 [zone=priority color=gold max_drones=2]
+hub: hope_trap1_1 19 2 [zone=priority color=gold]
+hub: hope_trap1_2 19 3 [zone=priority color=gold]
+hub: hope_dead1 20 2 [color=black]
+hub: hope_trap2_1 19 4 [zone=priority color=gold]
+hub: hope_trap2_2 19 5 [zone=priority color=gold]
+hub: hope_dead2 20 4 [color=black]
+hub: hope_trap3_1 19 6 [zone=priority color=gold]
+hub: hope_trap3_2 19 7 [zone=priority color=gold]
+hub: hope_dead3 20 6 [color=black]
+hub: hope_trap4_1 19 8 [zone=priority color=gold]
+hub: hope_trap4_2 19 9 [zone=priority color=gold]
+hub: hope_dead4 20 8 [color=black]
+hub: hope_trap5_1 19 10 [zone=priority color=gold]
+hub: hope_trap5_2 19 11 [zone=priority color=gold]
+hub: hope_dead5 20 10 [color=black]
+hub: hope_trap6_1 19 12 [zone=priority color=gold]
+hub: hope_trap6_2 19 13 [zone=priority color=gold]
+hub: hope_dead6 20 12 [color=black]
+hub: hope_trap7_1 19 14 [zone=priority color=gold]
+hub: hope_trap7_2 19 15 [zone=priority color=gold]
+hub: hope_dead7 20 14 [color=black]
+hub: hope_trap8_1 19 16 [zone=priority color=gold]
+hub: hope_trap8_2 19 17 [zone=priority color=gold]
+hub: hope_dead8 20 16 [color=black]
+hub: conv_c1_r1 23 2 [zone=restricted color=darkred max_drones=1]
+hub: conv_c1_r2 24 2 [zone=restricted color=darkred max_drones=1]
+hub: conv_c1_r3 25 2 [zone=restricted color=darkred max_drones=1]
+hub: conv_c1_r4 26 2 [zone=restricted color=darkred max_drones=1]
+hub: conv_c1_r5 27 2 [zone=restricted color=darkred max_drones=1]
+hub: conv_c1_r6 28 2 [zone=restricted color=darkred max_drones=1]
+hub: conv_c2_r1 23 4 [zone=restricted color=darkred max_drones=1]
+hub: conv_c2_r2 24 4 [zone=restricted color=darkred max_drones=1]
+hub: conv_c2_r3 25 4 [zone=restricted color=darkred max_drones=1]
+hub: conv_c2_r4 26 4 [zone=restricted color=darkred max_drones=1]
+hub: conv_c2_r5 27 4 [zone=restricted color=darkred max_drones=1]
+hub: conv_c2_r6 28 4 [zone=restricted color=darkred max_drones=1]
+hub: conv_c3_r1 23 6 [zone=restricted color=darkred max_drones=1]
+hub: conv_c3_r2 24 6 [zone=restricted color=darkred max_drones=1]
+hub: conv_c3_r3 25 6 [zone=restricted color=darkred max_drones=1]
+hub: conv_c3_r4 26 6 [zone=restricted color=darkred max_drones=1]
+hub: conv_c3_r5 27 6 [zone=restricted color=darkred max_drones=1]
+hub: conv_c3_r6 28 6 [zone=restricted color=darkred max_drones=1]
+hub: conv_c4_r1 23 8 [zone=restricted color=darkred max_drones=1]
+hub: conv_c4_r2 24 8 [zone=restricted color=darkred max_drones=1]
+hub: conv_c4_r3 25 8 [zone=restricted color=darkred max_drones=1]
+hub: conv_c4_r4 26 8 [zone=restricted color=darkred max_drones=1]
+hub: conv_c4_r5 27 8 [zone=restricted color=darkred max_drones=1]
+hub: conv_c4_r6 28 8 [zone=restricted color=darkred max_drones=1]
+hub: conv_c5_r1 23 10 [zone=restricted color=darkred max_drones=1]
+hub: conv_c5_r2 24 10 [zone=restricted color=darkred max_drones=1]
+hub: conv_c5_r3 25 10 [zone=restricted color=darkred max_drones=1]
+hub: conv_c5_r4 26 10 [zone=restricted color=darkred max_drones=1]
+hub: conv_c5_r5 27 10 [zone=restricted color=darkred max_drones=1]
+hub: conv_c5_r6 28 10 [zone=restricted color=darkred max_drones=1]
+hub: final_merge 30 0 [color=violet max_drones=6]
+hub: spiral0 32 0 [zone=restricted color=indigo]
+hub: spiral1 33 0 [zone=restricted color=indigo]
+hub: spiral2 33 1 [zone=restricted color=indigo]
+hub: spiral3 32 1 [zone=restricted color=indigo]
+hub: spiral4 31 1 [zone=restricted color=indigo]
+hub: spiral5 31 0 [zone=restricted color=indigo]
+hub: spiral6 31 -1 [zone=restricted color=indigo]
+hub: spiral7 32 -1 [zone=restricted color=indigo]
+hub: spiral8 33 -1 [zone=restricted color=indigo]
+hub: spiral9 34 -1 [zone=restricted color=indigo]
+hub: spiral10 34 0 [zone=restricted color=indigo]
+hub: spiral11 34 1 [zone=restricted color=indigo]
+hub: spiral12 34 2 [zone=restricted color=indigo]
+hub: spiral13 33 2 [zone=restricted color=indigo]
+hub: spiral14 32 2 [zone=restricted color=indigo]
+hub: spiral15 31 2 [zone=restricted color=indigo]
+hub: spiral16 30 2 [zone=restricted color=indigo]
+hub: spiral17 30 1 [zone=restricted color=indigo]
+hub: spiral18 30 -1 [zone=restricted color=indigo]
+hub: spiral19 30 -2 [zone=restricted color=indigo]
+hub: spiral20 30 -3 [zone=restricted color=indigo]
+hub: spiral21 31 -2 [zone=restricted color=indigo]
+hub: spiral22 32 -2 [zone=restricted color=indigo]
+hub: spiral23 33 -2 [zone=restricted color=indigo]
+hub: spiral24 34 -2 [zone=restricted color=indigo]
+hub: spiral25 35 -2 [zone=restricted color=indigo]
+hub: spiral26 35 -1 [zone=restricted color=indigo]
+hub: spiral27 35 0 [zone=restricted color=indigo]
+hub: spiral28 35 1 [zone=restricted color=indigo]
+hub: spiral29 35 2 [zone=restricted color=indigo]
+hub: spiral30 35 3 [zone=restricted color=indigo]
+hub: spiral31 34 3 [zone=restricted color=indigo]
+hub: spiral32 33 3 [zone=restricted color=indigo]
+hub: spiral33 32 3 [zone=restricted color=indigo]
+hub: spiral34 31 3 [zone=restricted color=indigo]
+hub: spiral35 30 3 [zone=restricted color=indigo]
+hub: spiral36 29 3 [zone=restricted color=indigo]
+hub: spiral37 29 2 [zone=restricted color=indigo]
+hub: spiral38 29 1 [zone=restricted color=indigo]
+hub: spiral39 29 0 [zone=restricted color=indigo]
+hub: final_torture1 41 0 [color=crimson max_drones=4]
+hub: final_torture2 42 0 [color=crimson max_drones=3]
+hub: final_torture3 43 0 [color=crimson max_drones=3]
+hub: final_torture4 44 0 [color=crimson max_drones=2]
+hub: final_torture5 45 0 [color=crimson max_drones=2]
+hub: final_torture6 46 0 [color=crimson max_drones=1]
+hub: final_torture7 47 0 [color=crimson max_drones=1]
+hub: final_torture8 48 0 [color=crimson max_drones=1]
+end_hub: impossible_goal_v2 50 0 [color=rainbow]
+
+connection: start-gate1_hell1 [max_link_capacity=1]
+connection: gate1_hell1-gate1_hell2 [max_link_capacity=1]
+connection: gate1_hell2-gate1_hell3 [max_link_capacity=1]
+connection: gate1_hell3-gate1_hell4 [max_link_capacity=1]
+connection: gate1_hell4-gate1_hell5 [max_link_capacity=1]
+connection: start-gate2_hell1 [max_link_capacity=1]
+connection: gate2_hell1-gate2_hell2 [max_link_capacity=1]
+connection: gate2_hell2-gate2_hell3 [max_link_capacity=1]
+connection: gate2_hell3-gate2_hell4 [max_link_capacity=1]
+connection: gate2_hell4-gate2_hell5 [max_link_capacity=1]
+connection: start-gate3_hell1 [max_link_capacity=1]
+connection: gate3_hell1-gate3_hell2 [max_link_capacity=1]
+connection: gate3_hell2-gate3_hell3 [max_link_capacity=1]
+connection: gate3_hell3-gate3_hell4 [max_link_capacity=1]
+connection: gate3_hell4-gate3_hell5 [max_link_capacity=1]
+connection: start-gate4_hell1 [max_link_capacity=1]
+connection: gate4_hell1-gate4_hell2 [max_link_capacity=1]
+connection: gate4_hell2-gate4_hell3 [max_link_capacity=1]
+connection: gate4_hell3-gate4_hell4 [max_link_capacity=1]
+connection: gate4_hell4-gate4_hell5 [max_link_capacity=1]
+connection: start-gate5_hell1 [max_link_capacity=1]
+connection: gate5_hell1-gate5_hell2 [max_link_capacity=1]
+connection: gate5_hell2-gate5_hell3 [max_link_capacity=1]
+connection: gate5_hell3-gate5_hell4 [max_link_capacity=1]
+connection: gate5_hell4-gate5_hell5 [max_link_capacity=1]
+connection: start-gate6_hell1 [max_link_capacity=1]
+connection: gate6_hell1-gate6_hell2 [max_link_capacity=1]
+connection: gate6_hell2-gate6_hell3 [max_link_capacity=1]
+connection: gate6_hell3-gate6_hell4 [max_link_capacity=1]
+connection: gate6_hell4-gate6_hell5 [max_link_capacity=1]
+connection: start-gate7_hell1 [max_link_capacity=1]
+connection: gate7_hell1-gate7_hell2 [max_link_capacity=1]
+connection: gate7_hell2-gate7_hell3 [max_link_capacity=1]
+connection: gate7_hell3-gate7_hell4 [max_link_capacity=1]
+connection: gate7_hell4-gate7_hell5 [max_link_capacity=1]
+connection: start-gate8_hell1 [max_link_capacity=1]
+connection: gate8_hell1-gate8_hell2 [max_link_capacity=1]
+connection: gate8_hell2-gate8_hell3 [max_link_capacity=1]
+connection: gate8_hell3-gate8_hell4 [max_link_capacity=1]
+connection: gate8_hell4-gate8_hell5 [max_link_capacity=1]
+connection: mazeA_r0c0-mazeA_r0c1
+connection: mazeA_r0c0-mazeA_r1c0
+connection: mazeA_r0c1-mazeA_r0c2
+connection: mazeA_r0c1-mazeA_r1c1
+connection: mazeA_r0c2-mazeA_r0c3
+connection: mazeA_r0c2-mazeA_r1c2
+connection: mazeA_r0c3-mazeA_r0c4
+connection: mazeA_r0c3-mazeA_r1c3
+connection: mazeA_r0c4-mazeA_r0c5
+connection: mazeA_r0c4-mazeA_r1c4
+connection: mazeA_r0c5-mazeA_r1c5
+connection: mazeA_r1c0-mazeA_r1c1
+connection: mazeA_r1c0-mazeA_r2c0
+connection: mazeA_r1c1-mazeA_r1c2
+connection: mazeA_r1c1-mazeA_r2c1
+connection: mazeA_r1c2-mazeA_r1c3
+connection: mazeA_r1c2-mazeA_r2c2
+connection: mazeA_r1c3-mazeA_r1c4
+connection: mazeA_r1c3-mazeA_r2c3
+connection: mazeA_r1c4-mazeA_r1c5
+connection: mazeA_r1c4-mazeA_r2c4
+connection: mazeA_r1c5-mazeA_r2c5
+connection: mazeA_r2c0-mazeA_r2c1
+connection: mazeA_r2c0-mazeA_r3c0
+connection: mazeA_r2c1-mazeA_r2c2
+connection: mazeA_r2c1-mazeA_r3c1
+connection: mazeA_r2c2-mazeA_r2c3
+connection: mazeA_r2c2-mazeA_r3c2
+connection: mazeA_r2c3-mazeA_r2c4
+connection: mazeA_r2c3-mazeA_r3c3
+connection: mazeA_r2c4-mazeA_r2c5
+connection: mazeA_r2c4-mazeA_r3c4
+connection: mazeA_r2c5-mazeA_r3c5
+connection: mazeA_r3c0-mazeA_r3c1
+connection: mazeA_r3c0-mazeA_r4c0
+connection: mazeA_r3c1-mazeA_r3c2
+connection: mazeA_r3c1-mazeA_r4c1
+connection: mazeA_r3c2-mazeA_r3c3
+connection: mazeA_r3c2-mazeA_r4c2
+connection: mazeA_r3c3-mazeA_r3c4
+connection: mazeA_r3c3-mazeA_r4c3
+connection: mazeA_r3c4-mazeA_r3c5
+connection: mazeA_r3c4-mazeA_r4c4
+connection: mazeA_r3c5-mazeA_r4c5
+connection: mazeA_r4c0-mazeA_r4c1
+connection: mazeA_r4c0-mazeA_r5c0
+connection: mazeA_r4c1-mazeA_r4c2
+connection: mazeA_r4c1-mazeA_r5c1
+connection: mazeA_r4c2-mazeA_r4c3
+connection: mazeA_r4c2-mazeA_r5c2
+connection: mazeA_r4c3-mazeA_r4c4
+connection: mazeA_r4c3-mazeA_r5c3
+connection: mazeA_r4c4-mazeA_r4c5
+connection: mazeA_r4c4-mazeA_r5c4
+connection: mazeA_r4c5-mazeA_r5c5
+connection: mazeA_r5c0-mazeA_r5c1
+connection: mazeA_r5c1-mazeA_r5c2
+connection: mazeA_r5c2-mazeA_r5c3
+connection: mazeA_r5c3-mazeA_r5c4
+connection: mazeA_r5c4-mazeA_r5c5
+connection: mazeB_r0c0-mazeB_r0c1
+connection: mazeB_r0c0-mazeB_r1c0
+connection: mazeB_r0c1-mazeB_r0c2
+connection: mazeB_r0c1-mazeB_r1c1
+connection: mazeB_r0c2-mazeB_r0c3
+connection: mazeB_r0c2-mazeB_r1c2
+connection: mazeB_r0c3-mazeB_r0c4
+connection: mazeB_r0c3-mazeB_r1c3
+connection: mazeB_r0c4-mazeB_r0c5
+connection: mazeB_r0c4-mazeB_r1c4
+connection: mazeB_r0c5-mazeB_r1c5
+connection: mazeB_r1c0-mazeB_r1c1
+connection: mazeB_r1c0-mazeB_r2c0
+connection: mazeB_r1c1-mazeB_r1c2
+connection: mazeB_r1c1-mazeB_r2c1
+connection: mazeB_r1c2-mazeB_r1c3
+connection: mazeB_r1c2-mazeB_r2c2
+connection: mazeB_r1c3-mazeB_r1c4
+connection: mazeB_r1c3-mazeB_r2c3
+connection: mazeB_r1c4-mazeB_r1c5
+connection: mazeB_r1c4-mazeB_r2c4
+connection: mazeB_r1c5-mazeB_r2c5
+connection: mazeB_r2c0-mazeB_r2c1
+connection: mazeB_r2c0-mazeB_r3c0
+connection: mazeB_r2c1-mazeB_r2c2
+connection: mazeB_r2c1-mazeB_r3c1
+connection: mazeB_r2c2-mazeB_r2c3
+connection: mazeB_r2c2-mazeB_r3c2
+connection: mazeB_r2c3-mazeB_r2c4
+connection: mazeB_r2c3-mazeB_r3c3
+connection: mazeB_r2c4-mazeB_r2c5
+connection: mazeB_r2c4-mazeB_r3c4
+connection: mazeB_r2c5-mazeB_r3c5
+connection: mazeB_r3c0-mazeB_r3c1
+connection: mazeB_r3c0-mazeB_r4c0
+connection: mazeB_r3c1-mazeB_r3c2
+connection: mazeB_r3c1-mazeB_r4c1
+connection: mazeB_r3c2-mazeB_r3c3
+connection: mazeB_r3c2-mazeB_r4c2
+connection: mazeB_r3c3-mazeB_r3c4
+connection: mazeB_r3c3-mazeB_r4c3
+connection: mazeB_r3c4-mazeB_r3c5
+connection: mazeB_r3c4-mazeB_r4c4
+connection: mazeB_r3c5-mazeB_r4c5
+connection: mazeB_r4c0-mazeB_r4c1
+connection: mazeB_r4c0-mazeB_r5c0
+connection: mazeB_r4c1-mazeB_r4c2
+connection: mazeB_r4c1-mazeB_r5c1
+connection: mazeB_r4c2-mazeB_r4c3
+connection: mazeB_r4c2-mazeB_r5c2
+connection: mazeB_r4c3-mazeB_r4c4
+connection: mazeB_r4c3-mazeB_r5c3
+connection: mazeB_r4c4-mazeB_r4c5
+connection: mazeB_r4c4-mazeB_r5c4
+connection: mazeB_r4c5-mazeB_r5c5
+connection: mazeB_r5c0-mazeB_r5c1
+connection: mazeB_r5c1-mazeB_r5c2
+connection: mazeB_r5c2-mazeB_r5c3
+connection: mazeB_r5c3-mazeB_r5c4
+connection: mazeB_r5c4-mazeB_r5c5
+connection: gate1_hell5-mazeA_r0c0
+connection: gate3_hell5-mazeA_r3c0
+connection: gate5_hell5-mazeB_r0c0
+connection: gate7_hell5-mazeB_r3c0
+connection: gate2_hell5-gate2_bridge [max_link_capacity=1]
+connection: gate4_hell5-gate4_bridge [max_link_capacity=1]
+connection: gate6_hell5-gate6_bridge [max_link_capacity=1]
+connection: gate8_hell5-gate8_bridge [max_link_capacity=1]
+connection: mazeA_r5c5-gate2_bridge
+connection: mazeA_r2c5-gate4_bridge
+connection: mazeB_r5c5-gate6_bridge
+connection: mazeB_r2c5-gate8_bridge
+connection: mazeA_r5c5-micro_gate1
+connection: mazeA_r0c5-micro_gate2
+connection: mazeB_r5c5-micro_gate3
+connection: mazeB_r0c5-micro_gate4
+connection: gate2_bridge-micro_gate3
+connection: gate4_bridge-micro_gate5
+connection: gate6_bridge-micro_gate7
+connection: gate8_bridge-micro_gate9
+connection: micro_gate1-micro_gate2
+connection: micro_gate2-micro_gate3
+connection: micro_gate3-micro_gate4
+connection: micro_gate4-micro_gate5
+connection: micro_gate5-micro_gate6
+connection: micro_gate6-micro_gate7
+connection: micro_gate7-micro_gate8
+connection: micro_gate8-micro_gate9
+connection: micro_gate9-micro_gate10
+connection: micro_gate1-overflow_hell1
+connection: micro_gate2-overflow_hell2
+connection: micro_gate3-overflow_hell3
+connection: micro_gate4-overflow_hell4
+connection: micro_gate5-overflow_hell5
+connection: micro_gate6-overflow_hell6
+connection: micro_gate7-overflow_hell7
+connection: micro_gate8-overflow_hell8
+connection: micro_gate9-overflow_hell9
+connection: micro_gate10-overflow_hell10
+connection: micro_gate1-overflow_hell11
+connection: micro_gate2-overflow_hell12
+connection: micro_gate3-overflow_hell13
+connection: micro_gate4-overflow_hell14
+connection: micro_gate5-overflow_hell15
+connection: micro_gate6-overflow_hell16
+connection: micro_gate7-overflow_hell17
+connection: micro_gate8-overflow_hell18
+connection: micro_gate9-overflow_hell19
+connection: micro_gate10-overflow_hell20
+connection: overflow_hell1-overflow_hell2
+connection: overflow_hell2-overflow_hell3
+connection: overflow_hell3-overflow_hell4
+connection: overflow_hell5-overflow_hell6
+connection: overflow_hell6-overflow_hell7
+connection: overflow_hell7-overflow_hell8
+connection: overflow_hell9-overflow_hell10
+connection: overflow_hell10-overflow_hell11
+connection: overflow_hell11-overflow_hell12
+connection: overflow_hell13-overflow_hell14
+connection: overflow_hell14-overflow_hell15
+connection: overflow_hell15-overflow_hell16
+connection: overflow_hell17-overflow_hell18
+connection: overflow_hell18-overflow_hell19
+connection: overflow_hell19-overflow_hell20
+connection: overflow_hell1-false_hope1
+connection: overflow_hell4-false_hope4
+connection: overflow_hell7-false_hope7
+connection: overflow_hell10-false_hope2
+connection: overflow_hell13-false_hope5
+connection: overflow_hell16-false_hope8
+connection: overflow_hell19-false_hope3
+connection: false_hope1-false_hope2
+connection: false_hope2-false_hope3
+connection: false_hope3-false_hope4
+connection: false_hope4-false_hope5
+connection: false_hope5-false_hope6
+connection: false_hope6-false_hope7
+connection: false_hope7-false_hope8
+connection: false_hope1-hope_trap1_1
+connection: false_hope1-hope_trap1_2
+connection: hope_trap1_1-hope_dead1
+connection: false_hope2-hope_trap2_1
+connection: false_hope2-hope_trap2_2
+connection: hope_trap2_1-hope_dead2
+connection: false_hope3-hope_trap3_1
+connection: false_hope3-hope_trap3_2
+connection: hope_trap3_1-hope_dead3
+connection: false_hope4-hope_trap4_1
+connection: false_hope4-hope_trap4_2
+connection: hope_trap4_1-hope_dead4
+connection: false_hope5-hope_trap5_1
+connection: false_hope5-hope_trap5_2
+connection: hope_trap5_1-hope_dead5
+connection: false_hope6-hope_trap6_1
+connection: false_hope6-hope_trap6_2
+connection: hope_trap6_1-hope_dead6
+connection: false_hope7-hope_trap7_1
+connection: false_hope7-hope_trap7_2
+connection: hope_trap7_1-hope_dead7
+connection: false_hope8-hope_trap8_1
+connection: false_hope8-hope_trap8_2
+connection: hope_trap8_1-hope_dead8
+connection: conv_c1_r1-conv_c1_r2 [max_link_capacity=1]
+connection: conv_c1_r2-conv_c1_r3 [max_link_capacity=1]
+connection: conv_c1_r3-conv_c1_r4 [max_link_capacity=1]
+connection: conv_c1_r4-conv_c1_r5 [max_link_capacity=1]
+connection: conv_c1_r5-conv_c1_r6 [max_link_capacity=1]
+connection: false_hope1-conv_c1_r1
+connection: conv_c2_r1-conv_c2_r2 [max_link_capacity=1]
+connection: conv_c2_r2-conv_c2_r3 [max_link_capacity=1]
+connection: conv_c2_r3-conv_c2_r4 [max_link_capacity=1]
+connection: conv_c2_r4-conv_c2_r5 [max_link_capacity=1]
+connection: conv_c2_r5-conv_c2_r6 [max_link_capacity=1]
+connection: false_hope2-conv_c2_r1
+connection: conv_c3_r1-conv_c3_r2 [max_link_capacity=1]
+connection: conv_c3_r2-conv_c3_r3 [max_link_capacity=1]
+connection: conv_c3_r3-conv_c3_r4 [max_link_capacity=1]
+connection: conv_c3_r4-conv_c3_r5 [max_link_capacity=1]
+connection: conv_c3_r5-conv_c3_r6 [max_link_capacity=1]
+connection: false_hope3-conv_c3_r1
+connection: conv_c4_r1-conv_c4_r2 [max_link_capacity=1]
+connection: conv_c4_r2-conv_c4_r3 [max_link_capacity=1]
+connection: conv_c4_r3-conv_c4_r4 [max_link_capacity=1]
+connection: conv_c4_r4-conv_c4_r5 [max_link_capacity=1]
+connection: conv_c4_r5-conv_c4_r6 [max_link_capacity=1]
+connection: false_hope4-conv_c4_r1
+connection: conv_c5_r1-conv_c5_r2 [max_link_capacity=1]
+connection: conv_c5_r2-conv_c5_r3 [max_link_capacity=1]
+connection: conv_c5_r3-conv_c5_r4 [max_link_capacity=1]
+connection: conv_c5_r4-conv_c5_r5 [max_link_capacity=1]
+connection: conv_c5_r5-conv_c5_r6 [max_link_capacity=1]
+connection: false_hope5-conv_c5_r1
+connection: conv_c1_r6-final_merge
+connection: conv_c2_r6-final_merge
+connection: conv_c3_r6-final_merge
+connection: conv_c4_r6-final_merge
+connection: conv_c5_r6-final_merge
+connection: spiral0-spiral1 [max_link_capacity=2]
+connection: spiral1-spiral2 [max_link_capacity=2]
+connection: spiral2-spiral3 [max_link_capacity=2]
+connection: spiral3-spiral4 [max_link_capacity=2]
+connection: spiral4-spiral5 [max_link_capacity=2]
+connection: spiral5-spiral6 [max_link_capacity=2]
+connection: spiral6-spiral7 [max_link_capacity=2]
+connection: spiral7-spiral8 [max_link_capacity=2]
+connection: spiral8-spiral9 [max_link_capacity=2]
+connection: spiral9-spiral10 [max_link_capacity=2]
+connection: spiral10-spiral11 [max_link_capacity=2]
+connection: spiral11-spiral12 [max_link_capacity=2]
+connection: spiral12-spiral13 [max_link_capacity=2]
+connection: spiral13-spiral14 [max_link_capacity=2]
+connection: spiral14-spiral15 [max_link_capacity=2]
+connection: spiral15-spiral16 [max_link_capacity=2]
+connection: spiral16-spiral17 [max_link_capacity=2]
+connection: spiral17-spiral18 [max_link_capacity=2]
+connection: spiral18-spiral19 [max_link_capacity=2]
+connection: spiral19-spiral20 [max_link_capacity=2]
+connection: spiral20-spiral21 [max_link_capacity=2]
+connection: spiral21-spiral22 [max_link_capacity=2]
+connection: spiral22-spiral23 [max_link_capacity=2]
+connection: spiral23-spiral24 [max_link_capacity=2]
+connection: spiral24-spiral25 [max_link_capacity=2]
+connection: spiral25-spiral26 [max_link_capacity=2]
+connection: spiral26-spiral27 [max_link_capacity=2]
+connection: spiral27-spiral28 [max_link_capacity=2]
+connection: spiral28-spiral29 [max_link_capacity=2]
+connection: spiral29-spiral30 [max_link_capacity=2]
+connection: spiral30-spiral31 [max_link_capacity=2]
+connection: spiral31-spiral32 [max_link_capacity=2]
+connection: spiral32-spiral33 [max_link_capacity=2]
+connection: spiral33-spiral34 [max_link_capacity=2]
+connection: spiral34-spiral35 [max_link_capacity=2]
+connection: spiral35-spiral36 [max_link_capacity=2]
+connection: spiral36-spiral37 [max_link_capacity=2]
+connection: spiral37-spiral38 [max_link_capacity=2]
+connection: spiral38-spiral39 [max_link_capacity=2]
+connection: final_merge-spiral0
+connection: spiral39-final_torture1
+connection: final_torture1-final_torture2
+connection: final_torture2-final_torture3
+connection: final_torture3-final_torture4
+connection: final_torture4-final_torture5
+connection: final_torture5-final_torture6
+connection: final_torture6-final_torture7
+connection: final_torture7-final_torture8
+connection: final_torture8-impossible_goal_v2
+connection: overflow_hell5-conv_c1_r1
+connection: overflow_hell10-conv_c2_r1
+connection: overflow_hell15-conv_c3_r1
+connection: overflow_hell20-conv_c4_r1
+connection: mazeA_r1c1-mazeB_r1c1
+connection: hope_dead1-conv_c5_r1
+connection: gate2_bridge-gate4_bridge
+connection: gate6_bridge-gate8_bridge
+connection: conv_c1_r3-conv_c2_r3
+connection: conv_c2_r3-conv_c3_r3
+connection: conv_c3_r3-conv_c4_r3
+connection: conv_c4_r3-conv_c5_r3
